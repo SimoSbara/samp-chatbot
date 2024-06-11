@@ -27,7 +27,7 @@ The current model in use is GPT 3.5 Turbo.
 * [Examples](https://github.com/SimoSbara/samp-shared-memory/tree/main/Examples) in Python, C/C++ and Pawno gamemode (for now).
 
 ### Documentation
-* Documentation can be found in the [wiki](https://github.com/SimoSbara/samp-shared-memory/wiki) section.
+* Documentation can be found in the [wiki](https://github.com/SimoSbara/samp-chat-gpt/wiki) section.
 
 ## Authors
 [@SimoSbara](https://github.com/SimoSbara)
