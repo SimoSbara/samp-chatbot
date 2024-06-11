@@ -1,0 +1,9 @@
+LIBRARY	"samp-gpt"
+
+EXPORTS
+	Supports
+	Load
+	Unload
+	AmxLoad
+	AmxUnload
+	ProcessTick

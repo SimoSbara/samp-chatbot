@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="lib\sdk\src\plugin.cpp">
+      <Filter>lib\sdk\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lib\sdk\src\plugin.h">
+      <Filter>lib\sdk\src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\main.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="samp-gpt.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="lib">
+      <UniqueIdentifier>{b2b397a5-15c5-4ea4-8c0e-a67582bf7f5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\sdk">
+      <UniqueIdentifier>{5548903e-4fa2-4f6a-aa3a-c301ce9fa775}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\sdk\src">
+      <UniqueIdentifier>{6234074f-39c9-474e-b0af-ab35565cd874}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{34cf8eef-2043-4f30-aaa2-e4a79fa95e1e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
