@@ -34,9 +34,9 @@ ifeq ($(config),debug)
   DEFINES   += 
   INCLUDES  += -Iinclude
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -O0 -Wall
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -m32 -g -O0 -Wall
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -rdynamic -shared
+  LDFLAGS   += -rdynamic -shared -m32
   LIBS      += 
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -56,9 +56,9 @@ ifeq ($(config),release)
   DEFINES   += -DNDEBUG
   INCLUDES  += -Iinclude
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -ffast-math -fmerge-all-constants -fno-strict-aliasing -fvisibility=hidden -fvisibility-inlines-hidden -O3 -Wall
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -m32 -ffast-math -fmerge-all-constants -fno-strict-aliasing -fvisibility=hidden -fvisibility-inlines-hidden -O3 -Wall
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -shared
+  LDFLAGS   += -s -shared -m32
   LIBS      += 
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 

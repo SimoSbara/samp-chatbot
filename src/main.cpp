@@ -2,6 +2,8 @@
 
 #include <sdk/plugin.h>
 
+#include <atomic>
+#include <thread>
 #include <string>
 #include <mutex>
 #include <queue>
@@ -19,8 +21,6 @@
 #endif
 
 #endif
-
-using json = nlohmann::json;
 
 static std::queue<AIRequest> requestes;
 static std::queue<AIResponse> responses;
@@ -85,9 +85,9 @@ static std::string GetURL(int type, std::string curAPIKey)
 	return "";
 }
 
-static json CreateRequest(int type, std::string prompt, std::string curSysPrompt, std::string curModel)
+static nlohmann::json CreateRequest(int type, std::string prompt, std::string curSysPrompt, std::string curModel)
 {
-	json requestDoc;
+	nlohmann::json requestDoc;
 
 	switch (type)
 	{
@@ -109,7 +109,7 @@ static json CreateRequest(int type, std::string prompt, std::string curSysPrompt
 	return requestDoc;
 }
 
-static std::string GetBotAnswer(int type, json response)
+static std::string GetBotAnswer(int type, nlohmann::json response)
 {
 	if (!response.empty())
 	{
@@ -117,7 +117,7 @@ static std::string GetBotAnswer(int type, json response)
 		{
 			try
 			{
-				json error = response.at("error");
+				nlohmann::json error = response.at("error");
 
 				if (!error.empty())
 					return response.dump(4).c_str();
@@ -170,7 +170,7 @@ static void DoRequest(std::string prompt, int playerid)
 	if (curl) 
 	{
 		std::string url = GetURL(curChatBot, curKey);
-		json requestData = CreateRequest(curChatBot, prompt, curSysPrompt, curModel);
+		nlohmann::json requestData = CreateRequest(curChatBot, prompt, curSysPrompt, curModel);
 		curl_slist* headers = GetHeader(curChatBot, curKey);
 
 		std::string requestDataStr = requestData.dump().c_str();
@@ -194,7 +194,7 @@ static void DoRequest(std::string prompt, int playerid)
 		curl_slist_free_all(headers);
 	}
 
-	json jresponse = json::parse(response);
+	nlohmann::json jresponse = nlohmann::json::parse(response);
 
 	std::string answer = GetBotAnswer(curChatBot, jresponse);
 
