@@ -14,25 +14,40 @@ This plugin can permit arbitrary model and system instruction choise using nativ
 
 Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn implementation.
 
-## Getting Started
+## Installation
+* Download the last [Release](https://github.com/SimoSbara/samp-chatbot/releases).
+* Put ```samp-chatbot.inc``` inside ```pawno/include``` folder.
+  
+### Only Windows
+* Put ```samp-chatbot.dll``` inside ```plugins``` folder;
+* Put ```libcurl.dll libcrypto-3.dll libss-3.dll``` inside the root server folder.
+  
+### Only Linux
+* Put ```samp-chatbot.so``` inside ```plugins``` folder;
+* Put ```libcurl.so.4 libcurl.so``` inside the root server folder.
 
-### Compiling
+## Development
 
-* If you want to compile the project on Windows, you will need Visual Studio 2022.
-* If you want to compile the project on Linux, you will need to execute "make" in the global folder.
-* Otherwise, there are also pre-compiled binaries in [Releases](https://github.com/SimoSbara/samp-chatbot/releases).
+### Compilation
 
-### Installing
+#### Windows
+Compiling on Windows is pretty simple, it requires Visual Studio 2022 with the latest C++ Windows SDK, libcurl is already provided.
 
-* Put samp-chatbot.dll or .so in plugins/ samp server folder.
-* Put samp-chatbot.inc in pawno/include/ samp server folder.
+#### Linux
+In Linux (I only tried on Debian based systems) you need to cross-compile curl and openssl in x86 on x64 machine.
 
-## Only for windows
-* Compile [curl](https://github.com/curl/curl) with OpenSSL or get precompiled binaries
-* Put dlls inside the root SAMP Server folder.
+Steps:
+* remove libcurl if it's already install and update with ```ldconfig```
+* install cross-platform multilib: ```sudo apt install gcc-multilib g++-multilib```
+* download [OpenSSL 3.3.1](https://github.com/openssl/openssl/releases/tag/openssl-3.3.1) and extract it
+* go inside OpenSSL folder and configure on x86: ```setarch i386 ./config -m32```
+* compile and install OpenSSL ```make``` and ```sudo make install```
+* download [libcurl 8.8.0](https://github.com/curl/curl) and extract it
+* configure libcurl by doing: ```./configure --host=i686-pc-linux-gnu --with-openssl CFLAGS=-m32 CC=/usr/bin/gcc```
+* compile libcurl ```make``` and install it ```cd lib/``` and ```sudo make install```
+* now you should have everything ready for compilation!
 
-## Only for linux debian based
-* Install libcurl ```sudo apt-get install -y libcurl-dev```
+For compiling the samp-chatbot do ```make``` inside the main folder, binaries are inside bin/linux/Release.
 
 ## Authors
 [@SimoSbara](https://github.com/SimoSbara)
