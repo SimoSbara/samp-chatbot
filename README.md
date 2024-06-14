@@ -3,12 +3,14 @@
 
 ## Description
 
-A GTA SAMP plugin for Chat GPT prompting.
+A GTA SAMP plugin for Chat Bot communication.
 
-It uses HTTP requestes to GPT API for communication.
-This first implementation is for recreational use but it could be adapted for contextual inside a roleplay server, for example.
+It is currently implemented these Chat Bots API:
+* [Chat GPT](https://platform.openai.com/docs/quickstart)
+* [Gemini AI](https://ai.google.dev/)
+* [LLAMA](groq.com) 
 
-The current model in use is GPT 3.5 Turbo.
+This plugin can permit arbitrary model and system instruction choise using natives in runtime.
 
 ## Getting Started
 
@@ -16,18 +18,22 @@ The current model in use is GPT 3.5 Turbo.
 
 * If you want to compile the project on Windows, you will need Visual Studio 2022.
 * If you want to compile the project on Linux, you will need to execute "make" in the global folder.
-* Otherwise, there are also pre-compiled binaries in [Releases](https://github.com/SimoSbara/samp-chat-gpt/releases).
+* Otherwise, there are also pre-compiled binaries in [Releases](https://github.com/SimoSbara/samp-chatbot/releases).
 
 ### Installing
 
-* Put samp-gpt.dll or .so in plugins/ samp server folder.
-* Put samp-gpt.inc in pawno/include/ samp server folder.
+* Put samp-chatbot.dll or .so in plugins/ samp server folder.
+* Put samp-chatbot.inc in pawno/include/ samp server folder.
 
-### Example of use
-* [Examples](https://github.com/SimoSbara/samp-shared-memory/tree/main/Examples) in Python, C/C++ and Pawno gamemode (for now).
+## Only for windows
+* Compile [curl](https://github.com/curl/curl) with OpenSSL or get precompiled binaries
+* Put dlls inside the root SAMP Server folder.
+
+## Only for linux debian based
+* Install libcurl ```sudo apt-get install -y libcurl-dev```
 
 ### Documentation
-* Documentation can be found in the [wiki](https://github.com/SimoSbara/samp-chat-gpt/wiki) section.
+* Documentation can be found in the [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) section.
 
 ## Authors
 [@SimoSbara](https://github.com/SimoSbara)
