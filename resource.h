@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // File di inclusione generato con Microsoft Visual C++.
-// Utilizzato da samp-gpt.rc
+// Utilizzato da samp-chatbot.rc
 //
 #define SW_HIDE                         0
 #define HIDE_WINDOW                     0

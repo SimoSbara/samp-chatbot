@@ -15,7 +15,7 @@
     <RootNamespace>samp-gpt</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.20348.0</WindowsTargetPlatformVersion>
-    <ProjectName>samp-gpt</ProjectName>
+    <ProjectName>samp-chatbot</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -57,7 +57,7 @@
       <ObjectFileName>$(IntDir)\%(RelativeDir)\</ObjectFileName>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>samp-gpt.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>samp-chatbot.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>
       </AdditionalDependencies>
@@ -78,7 +78,7 @@
       <ObjectFileName>$(IntDir)\%(RelativeDir)\</ObjectFileName>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>samp-gpt.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>samp-chatbot.def</ModuleDefinitionFile>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -97,7 +97,7 @@
     <ClInclude Include="src\main.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="samp-gpt.rc" />
+    <ResourceCompile Include="samp-chatbot.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

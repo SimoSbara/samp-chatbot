@@ -16,13 +16,32 @@
 		return 0; \
 	}
 
-class GPTRequest
+enum ChatBots
+{
+	GPT = 0,
+	GEMINI,
+	LLAMA,
+	NUM_CHAT_BOTS
+};
+
+class AIRequest
 {
 public:
-	GPTRequest(int playerid, std::string prompt)
+	AIRequest()
+	{
+		this->playerid = -1;
+	}
+
+	AIRequest(int playerid, std::string prompt)
 	{
 		this->playerid = playerid;
 		this->prompt = prompt;
+	}
+
+	void Clear()
+	{
+		this->playerid = -1;
+		this->prompt.clear();
 	}
 
 	std::string GetPrompt()
@@ -40,13 +59,19 @@ private:
 	int playerid; //who requests
 };
 
-class GPTResponse
+class AIResponse
 {
 public:
-	GPTResponse(int playerid, std::string response)
+	AIResponse(int playerid, std::string prompt, std::string response)
 	{
 		this->playerid = playerid;
+		this->prompt = prompt;
 		this->response = response;
+	}
+
+	std::string GetPrompt()
+	{
+		return this->prompt;
 	}
 
 	std::string GetResponse()
@@ -60,6 +85,7 @@ public:
 	}
 
 private:
+	std::string prompt; //prompt from the player
 	std::string response; //response of gpt
 	int playerid; //who has requested
 };

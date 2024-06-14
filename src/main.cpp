@@ -13,25 +13,29 @@
 #ifdef WIN32
 
 #ifdef _DEBUG
-#pragma comment(lib, "libcurl-d_imp.lib")
+#pragma comment(lib, "libcurl_debug.lib")
 #else
-#pragma comment(lib, "libcurl_imp.lib")
+#pragma comment(lib, "libcurl.lib")
 #endif
 
 #endif
 
 using json = nlohmann::json;
 
-static std::queue<GPTRequest> requestes;
-static std::queue<GPTResponse> responses;
+static std::queue<AIRequest> requestes;
+static std::queue<AIResponse> responses;
 
 static std::mutex requestLock;
 static std::mutex responseLock;
 static std::mutex keyLock;
 static std::mutex sysPromptLock;
+static std::mutex modelLock;
+static std::mutex chatBotLock;
 
 static std::string apiKey;
 static std::string systemPrompt; //for better context answering
+static std::string model = "gpt-3.5-turbo";
+static unsigned char chatBotType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/)
 
 static std::thread requestsThread;
 static std::atomic<bool> running;
@@ -47,9 +51,102 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* res
 	return totalSize;
 }
 
+static curl_slist* GetHeader(int type, std::string curAPIKey)
+{
+	curl_slist* headers = NULL;
+
+	switch (type)
+	{
+	case GPT:
+	case LLAMA:
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+		headers = curl_slist_append(headers, ("Authorization: Bearer " + curAPIKey).c_str());
+		break;
+	case GEMINI:
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+		break;
+	}
+
+	return headers;
+}
+
+static std::string GetURL(int type, std::string curAPIKey)
+{
+	switch (type)
+	{
+	case GPT:
+		return "https://api.openai.com/v1/chat/completions";
+	case GEMINI:
+		return "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + curAPIKey;
+	case LLAMA:
+		return "https://api.groq.com/openai/v1/chat/completions";
+	}
+
+	return "";
+}
+
+static json CreateRequest(int type, std::string prompt, std::string curSysPrompt, std::string curModel)
+{
+	json requestDoc;
+
+	switch (type)
+	{
+	case LLAMA:
+	case GPT:
+		requestDoc["model"] = curModel;
+		requestDoc["messages"][0]["role"] = "system";
+		requestDoc["messages"][0]["content"] = curSysPrompt;
+		requestDoc["messages"][1]["role"] = "user";
+		requestDoc["messages"][1]["content"] = prompt;
+		requestDoc["temperature"] = 0;
+		break;
+	case GEMINI:
+		requestDoc["system_instruction"]["parts"]["text"] = curSysPrompt;
+		requestDoc["contents"][0]["parts"][0]["text"] = prompt;
+		break;
+	}
+
+	return requestDoc;
+}
+
+static std::string GetBotAnswer(int type, json response)
+{
+	if (!response.empty())
+	{
+		try
+		{
+			try
+			{
+				json error = response.at("error");
+
+				if (!error.empty())
+					return response.dump(4).c_str();
+			}
+			catch (std::exception)
+			{
+				//errore non trovato
+			}
+
+			switch (type)
+			{
+			case LLAMA:
+			case GPT:
+				return response.at("choices").at(0).at("message").at("content");
+			case GEMINI:
+				return response.at("candidates").at("parts").at(0).at("text");
+			}
+		}
+		catch (std::exception exc)
+		{
+			logprintf("ChatBot Plugin Exception GetBotAnswer(): %s\n", exc.what());
+		}
+	}
+
+	return "";
+}
+
 static void DoRequest(std::string prompt, int playerid)
 {
-	std::string baseUrl = "https://api.openai.com/v1/chat/completions";
 	std::string response;
 
 	keyLock.lock();
@@ -60,68 +157,77 @@ static void DoRequest(std::string prompt, int playerid)
 	std::string curSysPrompt = systemPrompt;
 	sysPromptLock.unlock();
 
+	modelLock.lock();
+	std::string curModel = model;
+	modelLock.unlock();
+
+	chatBotLock.lock();
+	int curChatBot = chatBotType;
+	chatBotLock.unlock();
+
 	CURL* curl = curl_easy_init();
 
-	if (curl) {
-		json requestData;
-		requestData["model"] = "gpt-3.5-turbo";
-		requestData["messages"][0]["role"] = "system";
-		requestData["messages"][0]["content"] = curSysPrompt;
-		requestData["messages"][1]["role"] = "user";
-		requestData["messages"][1]["content"] = prompt;
-		requestData["temperature"] = 0;
+	if (curl) 
+	{
+		std::string url = GetURL(curChatBot, curKey);
+		json requestData = CreateRequest(curChatBot, prompt, curSysPrompt, curModel);
+		curl_slist* headers = GetHeader(curChatBot, curKey);
 
 		std::string requestDataStr = requestData.dump().c_str();
 
-		struct curl_slist* headers = NULL;
-		headers = curl_slist_append(headers, "Content-Type: application/json");
-		headers = curl_slist_append(headers, ("Authorization: Bearer " + curKey).c_str());
-		curl_easy_setopt(curl, CURLOPT_URL, baseUrl.c_str());
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestDataStr.c_str());
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, requestDataStr.length());
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 		CURLcode res = curl_easy_perform(curl);
 
 		if (res != CURLE_OK) 
 		{
-			logprintf("\n\nGPT Request Failed! Error: %s\n", curl_easy_strerror(res));
+			logprintf("\n\nChat Bot Request Failed! Error: %s\n", curl_easy_strerror(res));
 		}
 
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
 	}
 
-	// return response;
 	json jresponse = json::parse(response);
 
-	json choices = jresponse.at("choices");
-	json choices0 = choices.at(0);
-	json message = choices0.at("message");
+	std::string answer = GetBotAnswer(curChatBot, jresponse);
 
-	response = message.value("content", "");
+	AIResponse resp(playerid, prompt, answer);
 
-	if (response.empty())
-	{
-		GPTResponse gptRes(playerid, response);
-
-		responseLock.lock();
-		responses.push(gptRes);
-		responseLock.unlock();
-	}
+	responseLock.lock();
+	responses.push(resp);
+	responseLock.unlock();
 }
 
-static void RequestsThread(void* params)
+static void RequestsThread()
 {
+	AIRequest curRequest;
+
 	while (running)
 	{
 		requestLock.lock();
-		GPTRequest& curRequest = requestes.front();
-		requestes.pop();
+
+		if (!requestes.empty())
+		{
+			curRequest = requestes.front();
+			requestes.pop();
+		}
+
 		requestLock.unlock();
 
-		DoRequest(curRequest.GetPrompt(), curRequest.GetPlayerID());
+		std::string prompt = curRequest.GetPrompt();
+		int playerid = curRequest.GetPlayerID();
+
+		if(!prompt.empty() && playerid >= 0)
+			DoRequest(prompt, playerid);
+
+		curRequest.Clear();
 	}
 }
 
@@ -134,10 +240,10 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 {
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
-	logprintf("\n\nGPT API Plugin by SimoSbara loaded\n", PLUGIN_VERSION);
+	logprintf("\n\nChatBot API Plugin by SimoSbara loaded\n", PLUGIN_VERSION);
 
 	running = true;
-	requestsThread = std::thread(RequestsThread, nullptr);
+	requestsThread = std::thread(RequestsThread);
 	requestsThread.detach();
 
 	return true;
@@ -147,26 +253,46 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	running = false;
 
-	logprintf("\n\nGPT API Plugin by SimoSbara unloaded\n", PLUGIN_VERSION);    
+	logprintf("\n\nChatBot API Plugin by SimoSbara unloaded\n", PLUGIN_VERSION);    
 }
 
-static cell AMX_NATIVE_CALL n_RequestToGPT(AMX* amx, cell* params)
+static cell AMX_NATIVE_CALL n_RequestToChatBot(AMX* amx, cell* params)
 {
 	char* pRequest = NULL;
 
-	CHECK_PARAMS(2, "RequestToGPT"); //playerid, request string
+	CHECK_PARAMS(2, "RequestToChatBot"); //playerid, request string
+
 	amx_StrParam(amx, params[1], pRequest);
 
 	std::string request(pRequest);
+
 	int playerID = static_cast<int>(params[2]);
 
 	if (!request.empty())
 	{
-		GPTRequest newRequest(playerID, request);
+		AIRequest newRequest(playerID, request);
 
 		requestLock.lock();
 		requestes.push(newRequest);
 		requestLock.unlock();
+
+		return 0;
+	}
+
+	return 1;
+}
+
+static cell AMX_NATIVE_CALL n_SelectChatBot(AMX* amx, cell* params)
+{
+	CHECK_PARAMS(1, "SelectChatBot"); //api key string
+
+	int type = static_cast<int>(params[1]);
+
+	if (type >= GPT && type < NUM_CHAT_BOTS)
+	{
+		chatBotLock.lock();
+		chatBotType = type;
+		chatBotLock.unlock();
 
 		return 0;
 	}
@@ -216,11 +342,34 @@ static cell AMX_NATIVE_CALL n_SetSystemPrompt(AMX* amx, cell* params)
 	return 1;
 }
 
+static cell AMX_NATIVE_CALL n_SetModel(AMX* amx, cell* params)
+{
+	char* pModel = NULL;
+
+	CHECK_PARAMS(1, "SetModel"); //chatbot model string
+	amx_StrParam(amx, params[1], pModel);
+
+	std::string chatModel(pModel);
+
+	if (!chatModel.empty())
+	{
+		modelLock.lock();
+		model = chatModel;
+		modelLock.unlock();
+
+		return 0;
+	}
+
+	return 1;
+}
+
 AMX_NATIVE_INFO natives[] =
 {
-	{ "RequestToGPT", n_RequestToGPT },
+	{ "RequestToChatBot", n_RequestToChatBot },
+	{ "SelectChatBot", n_SelectChatBot },
 	{ "SetAPIKey", n_SetAPIKey },
 	{ "SetSystemPrompt", n_SetSystemPrompt },
+	{ "SetModel", n_SetModel },
 	{ 0, 0 }
 };
 
@@ -241,7 +390,7 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 	if (!responses.empty())
 	{
 		responseLock.lock();
-		GPTResponse& response = responses.front();
+		AIResponse response = responses.front();
 		responses.pop();
 		responseLock.unlock();
 
@@ -250,13 +399,15 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 			cell amxAddresses[2] = { 0 };
 			int amxIndex = 0;
 
-			if (!amx_FindPublic(*a, "OnGPTResponse", &amxIndex))
+			if (!amx_FindPublic(*a, "OnChatBotResponse", &amxIndex))
 			{
 				//parametri al contrario
 				amx_Push(*a, response.GetPlayerID());
 				amx_PushString(*a, &amxAddresses[0], NULL, response.GetResponse().c_str(), 0, 0);
+				amx_PushString(*a, &amxAddresses[1], NULL, response.GetPrompt().c_str(), 0, 0);
 				amx_Exec(*a, NULL, amxIndex);
 				amx_Release(*a, amxAddresses[0]);
+				amx_Release(*a, amxAddresses[1]);
 			}
 		}
 	}

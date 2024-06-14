@@ -30,11 +30,11 @@ BEGIN
     BEGIN
         BLOCK "04090025"
         BEGIN
-            VALUE "FileDescription", "SA-MP Chat GPT Plugin"
+            VALUE "FileDescription", "SA-MP Chat Bot Plugin"
             VALUE "FileVersion", "1.0.0.0"
             VALUE "LegalCopyright", "Copyright © 2024 SimoSbara"
-            VALUE "OriginalFilename", "samp-gpt.dll"
-            VALUE "ProductName", "SA-MP Chat GPT Plugin"
+            VALUE "OriginalFilename", "samp-chatbot.dll"
+            VALUE "ProductName", "SA-MP Chat Bot Plugin"
             VALUE "ProductVersion", "v1.0"
         END
     END

@@ -30,7 +30,7 @@ endif
 ifeq ($(config),debug)
   OBJDIR     = obj/linux/Debug
   TARGETDIR  = bin/linux/Debug
-  TARGET     = $(TARGETDIR)/samp-gpt.so
+  TARGET     = $(TARGETDIR)/samp-chatbot.so
   DEFINES   += 
   INCLUDES  += -Iinclude
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
@@ -52,7 +52,7 @@ endif
 ifeq ($(config),release)
   OBJDIR     = obj/linux/Release
   TARGETDIR  = bin/linux/Release
-  TARGET     = $(TARGETDIR)/samp-gpt.so
+  TARGET     = $(TARGETDIR)/samp-chatbot.so
   DEFINES   += -DNDEBUG
   INCLUDES  += -Iinclude
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
@@ -91,7 +91,7 @@ all: $(TARGETDIR) $(OBJDIR) prebuild prelink $(TARGET)
 	@:
 
 $(TARGET): $(GCH) $(OBJECTS) $(LDDEPS) $(RESOURCES)
-	@echo Linking samp-gpt
+	@echo Linking samp-chatbot
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -112,7 +112,7 @@ else
 endif
 
 clean:
-	@echo Cleaning samp-gpt
+	@echo Cleaning samp-chatbot
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
