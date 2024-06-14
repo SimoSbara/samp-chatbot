@@ -14,6 +14,9 @@ This plugin can permit arbitrary model and system instruction choise using nativ
 
 Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn implementation.
 
+## Examples
+Examples are coming soon.
+
 ## Installation
 * Download the last [Release](https://github.com/SimoSbara/samp-chatbot/releases).
 * Put ```samp-chatbot.inc``` inside ```pawno/include``` folder.
