@@ -12,6 +12,8 @@ It is currently implemented these Chat Bots API:
 
 This plugin can permit arbitrary model and system instruction choise using natives in runtime.
 
+Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn implementation.
+
 ## Getting Started
 
 ### Compiling
@@ -31,9 +33,6 @@ This plugin can permit arbitrary model and system instruction choise using nativ
 
 ## Only for linux debian based
 * Install libcurl ```sudo apt-get install -y libcurl-dev```
-
-### Documentation
-* Documentation can be found in the [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) section.
 
 ## Authors
 [@SimoSbara](https://github.com/SimoSbara)
