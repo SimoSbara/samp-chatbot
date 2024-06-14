@@ -1,4 +1,4 @@
-# samp-chat-gpt
+# samp-chatbot
 
 
 ## Description
