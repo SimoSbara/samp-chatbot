@@ -6,18 +6,18 @@ ifndef config
 endif
 export config
 
-PROJECTS := shmem
+PROJECTS := samp-chatbot
 
 .PHONY: all clean help $(PROJECTS)
 
 all: $(PROJECTS)
 
-shmem: 
-	@echo "==== Building shmem ($(config)) ===="
-	@${MAKE} --no-print-directory -C . -f shmem.make
+samp-chatbot: 
+	@echo "==== Building samp-chatbot ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f samp-chatbot.make
 
 clean:
-	@${MAKE} --no-print-directory -C . -f shmem.make clean
+	@${MAKE} --no-print-directory -C . -f samp-chatbot.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -29,6 +29,6 @@ help:
 	@echo "TARGETS:"
 	@echo "   all (default)"
 	@echo "   clean"
-	@echo "   shmem"
+	@echo "   samp-chatbot"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"
