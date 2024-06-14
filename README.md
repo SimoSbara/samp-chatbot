@@ -8,7 +8,7 @@ A GTA SAMP plugin for Chat Bot communication.
 It is currently implemented these Chat Bots API:
 * [Chat GPT](https://platform.openai.com/docs/quickstart)
 * [Gemini AI](https://ai.google.dev/)
-* [LLAMA](groq.com) 
+* [LLAMA](https://groq.com/) 
 
 This plugin can permit arbitrary model and system instruction choise using natives in runtime.
 
