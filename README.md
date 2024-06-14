@@ -49,13 +49,9 @@ Steps:
 
 For compiling the samp-chatbot do ```make``` inside the main folder, binaries are inside bin/linux/Release.
 
-## Authors
-[@SimoSbara](https://github.com/SimoSbara)
-
 ## License
 This project is licensed under the GNU General Public License v3.0 - see the LICENSE.md file for details
 
 ## Acknowledgments
-
 Project structure inspired from:
 * [samp-dns-plugin by samp-incognito](https://github.com/samp-incognito/samp-dns-plugin)
