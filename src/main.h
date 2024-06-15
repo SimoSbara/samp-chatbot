@@ -8,6 +8,8 @@
 	#include <windows.h>
 #endif
 
+#include <wchar.h>
+#include <cstring>
 #include <string>
 #include <locale>
 #include <codecvt>
@@ -37,17 +39,17 @@ public:
 		memset(accentFilters, 0, 65536 * sizeof(char));
 
 		//remove all type of accents
-		AddFilter(L'à', 6, 'a');
-		AddFilter(L'è', 4, 'e');
-		AddFilter(L'ì', 4, 'i');
-		AddFilter(L'ò', 5, 'o');
-		AddFilter(L'ù', 4, 'u');
+		AddFilter(0xe0, 6, 'a');
+		AddFilter(0xe8, 4, 'e');
+		AddFilter(0xec, 4, 'i');
+		AddFilter(0xf2, 5, 'o');
+		AddFilter(0xf9, 4, 'u');
 
-		AddFilter(L'À', 6, 'A');
-		AddFilter(L'È', 4, 'E');
-		AddFilter(L'Ì', 4, 'I');
-		AddFilter(L'Ò', 5, 'O');
-		AddFilter(L'Ù', 4, 'U');
+		AddFilter(0xc0, 6, 'A');
+		AddFilter(0xc8, 4, 'E');
+		AddFilter(0xcc, 4, 'I');
+		AddFilter(0xd2, 5, 'O');
+		AddFilter(0xd9, 4, 'U');
 	}
 
 	static std::wstring Convert(std::string input)
