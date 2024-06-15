@@ -14,9 +14,70 @@ This plugin can permit arbitrary model and system instruction choise using nativ
 
 Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn implementation.
 
-## Examples
-Examples are coming soon.
+## Example of use
+```
+#include <a_samp>
+#include <core>
+#include <float>
+#include <samp-chatbot>
+#include <pawncmd>
+#include <sscanf2>
 
+#define COLOR_RED 0xFF0000FF
+#define COLOR_MAGENTA 0xFFFF00FF
+
+#define CHATBOT_DIALOG   10
+#define API_KEY          "MY_API_KEY"
+
+#pragma tabsize 0
+
+new lastResponses[MAX_PLAYERS][1024];
+
+main()
+{
+    SelectChatBot(LLAMA);
+    SetModel("llama3-70b-8192");
+    SetAPIKey(API_KEY);
+    SetSystemPrompt("You are an assistant inside GTA SAMP");
+}
+
+CMD:sysprompt(playerid, params[])
+{
+    new sysPrompt[512];
+
+    if(sscanf(params, "s[512]", sysPrompt))
+        return SendClientMessage(playerid, COLOR_RED, "/sysprompt <system_prompt>");
+
+    SetSystemPrompt(sysPrompt);
+
+    return 1;
+}
+
+CMD:bot(playerid, params[])
+{
+    new prompt[512];
+
+    if(sscanf(params, "s[512]", prompt))
+        return SendClientMessage(playerid, COLOR_RED, "/bot <prompt>");
+
+    RequestToChatBot(prompt, playerid);
+
+    return 1;
+}
+
+CMD:lastresponse(playerid, params[])
+{
+    ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastResponses[playerid], "Ok", "");
+    return 1;
+}
+
+public OnChatBotResponse(prompt[], response[], playerid)
+{
+    format(lastResponses[playerid], 1024, "%s", response);
+
+    SendClientMessage(playerid, COLOR_MAGENTA, "Chat Bot Responded! Check it with /lastresponse.");
+}
+```
 ## Installation
 * Download the last [Release](https://github.com/SimoSbara/samp-chatbot/releases).
 * Put ```samp-chatbot.inc``` inside ```pawno/include``` folder.
