@@ -101,7 +101,7 @@ Compiling on Windows is pretty simple, it requires Visual Studio 2022 with the l
 In Linux (I only tried on Debian based systems) you need to cross-compile curl and openssl in x86 on x64 machine.
 
 Steps:
-* remove libcurl if it's already install and update with ```ldconfig```
+* remove libcurl and OpenSSL if it's already install and update with ```ldconfig``` otherwise it will create conflicts!
 * install cross-platform multilib: ```sudo apt install gcc-multilib g++-multilib```
 * download [OpenSSL 3.3.1](https://github.com/openssl/openssl/releases/tag/openssl-3.3.1) and extract it
 * go inside OpenSSL folder and configure on x86: ```setarch i386 ./config -m32```
