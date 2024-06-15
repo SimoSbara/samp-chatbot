@@ -39,17 +39,17 @@ public:
 		memset(accentFilters, 0, 65536 * sizeof(char));
 
 		//remove all type of accents
-		AddFilter(0xe0, 6, 'a');
-		AddFilter(0xe8, 4, 'e');
-		AddFilter(0xec, 4, 'i');
-		AddFilter(0xf2, 5, 'o');
-		AddFilter(0xf9, 4, 'u');
+		AddFilter(L'\xe0', 6, 'a');
+		AddFilter(L'\xe8', 4, 'e');
+		AddFilter(L'\xec', 4, 'i');
+		AddFilter(L'\xf2', 5, 'o');
+		AddFilter(L'\xf9', 4, 'u');
 
-		AddFilter(0xc0, 6, 'A');
-		AddFilter(0xc8, 4, 'E');
-		AddFilter(0xcc, 4, 'I');
-		AddFilter(0xd2, 5, 'O');
-		AddFilter(0xd9, 4, 'U');
+		AddFilter(L'\xc0', 6, 'A');
+		AddFilter(L'\xc8', 4, 'E');
+		AddFilter(L'\xcc', 4, 'I');
+		AddFilter(L'\xd2', 5, 'O');
+		AddFilter(L'\xd9', 4, 'U');
 	}
 
 	static std::wstring Convert(std::string input)
