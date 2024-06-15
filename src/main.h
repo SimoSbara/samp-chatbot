@@ -7,7 +7,10 @@
 #ifdef _WIN32
 	#include <windows.h>
 #endif
+
 #include <string>
+#include <locale>
+#include <codecvt>
 
 #define CHECK_PARAMS(m, n) \
 	if (params[0] != (m * 4)) \
@@ -22,6 +25,100 @@ enum ChatBots
 	GEMINI,
 	LLAMA,
 	NUM_CHAT_BOTS
+};
+
+//IT: artigianale...
+//EN: homemade
+class EncodingHelper
+{
+public:
+	static void Init()
+	{
+		memset(accentFilters, 0, 65536 * sizeof(char));
+
+		//remove all type of accents
+		AddFilter(L'à', 6, 'a');
+		AddFilter(L'è', 4, 'e');
+		AddFilter(L'ì', 4, 'i');
+		AddFilter(L'ò', 5, 'o');
+		AddFilter(L'ù', 4, 'u');
+
+		AddFilter(L'À', 6, 'A');
+		AddFilter(L'È', 4, 'E');
+		AddFilter(L'Ì', 4, 'I');
+		AddFilter(L'Ò', 5, 'O');
+		AddFilter(L'Ù', 4, 'U');
+	}
+
+	static std::wstring Convert(std::string input)
+	{
+		return converter.from_bytes(input);
+	}
+
+	static std::string Convert(std::wstring input)
+	{
+		return converter.to_bytes(input);
+	}
+
+	static std::string FilterAccents(std::string toFilter)
+	{
+		if (toFilter.length() <= 0)
+			return "";
+
+		std::wstring input = Convert(toFilter);
+
+		int length = input.length();
+		int curLength = length;
+
+		wchar_t* text = new wchar_t[length * 2 + 1];
+
+		if (text)
+		{
+			memset(text, 0, (length * 2 + 1) * sizeof(wchar_t));
+			memcpy(text, input.c_str(), length * sizeof(wchar_t));
+
+			for (int i = 0; i < length; i++)
+			{
+				if (FilterChar(text + i, curLength - i - 1))
+					curLength++;
+			}
+
+			std::wstring out(text, curLength);
+
+			delete[] text;
+
+			return converter.to_bytes(out);
+		}
+
+		return toFilter;
+	}
+
+private:
+	static inline void AddFilter(wchar_t start, wchar_t count, char replace)
+	{
+		for (wchar_t i = start; i < start + count; i++)
+			accentFilters[i] = replace;
+	}
+
+	static inline bool FilterChar(wchar_t* ptr, int endCount)
+	{
+		wchar_t newChar = *(accentFilters + *ptr);
+
+		if (newChar)
+		{
+			*ptr = newChar;
+			memcpy(ptr + 2, ptr + 1, endCount * sizeof(wchar_t));
+			*(ptr + 1) = L'\'';
+
+			return true;
+		}
+		return false;
+	}
+
+private:
+
+	static char accentFilters[65536]; //look up table
+	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 };
 
 class AIRequest

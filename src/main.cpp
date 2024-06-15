@@ -22,6 +22,9 @@
 
 #endif
 
+char EncodingHelper::accentFilters[65536]; //look up table
+std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> EncodingHelper::converter;
+
 static std::queue<AIRequest> requestes;
 static std::queue<AIResponse> responses;
 
@@ -115,6 +118,8 @@ static std::string GetBotAnswer(int type, nlohmann::json response)
 	{
 		try
 		{
+			std::string answer;
+
 			try
 			{
 				nlohmann::json error = response.at("error");
@@ -131,10 +136,14 @@ static std::string GetBotAnswer(int type, nlohmann::json response)
 			{
 			case LLAMA:
 			case GPT:
-				return response.at("choices").at(0).at("message").at("content");
+				answer = response.at("choices").at(0).at("message").at("content");
+				break;
 			case GEMINI:
-				return response.at("candidates").at("parts").at(0).at("text");
+				answer = response.at("candidates").at("parts").at(0).at("text");
+				break;
 			}
+
+			return EncodingHelper::FilterAccents(answer);
 		}
 		catch (std::exception exc)
 		{
@@ -224,8 +233,13 @@ static void RequestsThread()
 		std::string prompt = curRequest.GetPrompt();
 		int playerid = curRequest.GetPlayerID();
 
-		if(!prompt.empty() && playerid >= 0)
+		if (!prompt.empty() && playerid >= 0)
+		{
+#ifdef _DEBUG
+			logprintf("\nnew request: %s\n", prompt.c_str());
+#endif
 			DoRequest(prompt, playerid);
+		}
 
 		curRequest.Clear();
 	}
@@ -241,6 +255,8 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 	logprintf("\n\nChatBot API Plugin by SimoSbara loaded\n", PLUGIN_VERSION);
+
+	EncodingHelper::Init();
 
 	running = true;
 	requestsThread = std::thread(RequestsThread);
@@ -393,6 +409,10 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 		AIResponse response = responses.front();
 		responses.pop();
 		responseLock.unlock();
+
+#ifdef _DEBUG
+		logprintf("\nnew response: %s\n", response.GetResponse().c_str());
+#endif
 
 		for (std::set<AMX*>::iterator a = interfaces.begin(); a != interfaces.end(); a++)
 		{
