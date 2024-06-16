@@ -150,7 +150,7 @@ static std::string GetBotAnswer(int type, nlohmann::json response)
 				answer = response.at("choices").at(0).at("message").at("content");
 				break;
 			case GEMINI:
-				answer = response.at("candidates").at("parts").at(0).at("text");
+				answer = response.at("candidates").at(0).at("content").at("parts").at(0).at("text");
 				break;
 			}
 
@@ -159,6 +159,7 @@ static std::string GetBotAnswer(int type, nlohmann::json response)
 		catch (std::exception exc)
 		{
 			logprintf("ChatBot Plugin Exception GetBotAnswer(): %s\n", exc.what());
+			return response.dump(4).c_str();
 		}
 	}
 
