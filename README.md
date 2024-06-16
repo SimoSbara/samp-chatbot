@@ -103,7 +103,7 @@ public OnChatBotResponse(prompt[], response[], playerid)
 * Put ```libcurl.dll libcrypto-3.dll libss-3.dll``` inside the root server folder.
   
 ### Only Linux
-* Put ```samp-chatbot.so``` inside ```plugins``` folder;
+* Put ```samp-chatbot.so``` inside ```plugins``` folder.
 
 ## Development
 
