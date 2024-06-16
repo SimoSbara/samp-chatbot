@@ -5,6 +5,8 @@
 
 A GTA SAMP plugin for Chat Bot communication.
 
+It works for both SAMP and [Open.mp](https://www.open.mp/)
+
 The following Chat Bots API are implemented:
 * [Chat GPT](https://platform.openai.com/docs/quickstart)
 * [Gemini AI](https://ai.google.dev/)
@@ -113,7 +115,9 @@ public OnChatBotResponse(prompt[], response[], playerid)
 Compiling on Windows is pretty simple, it requires Visual Studio 2022 with the latest C++ Windows SDK, libcurl is already provided.
 
 #### Linux
-In Linux (I only tried on Debian based systems) you need to cross-compile curl and openssl in 32 bit on 64 bit machine.
+In Linux (I only tried on Debian based systems) you need to do ```make clean``` and ```make``` inside the main folder, ```libcurl libssl libcrypto``` are already provided.
+
+If you want to compile curl and openssl yourself you will need to cross-compile them in 32 bit on 64 bit machine.
 
 Steps:
 * remove libcurl and OpenSSL if it's already install and update with ```ldconfig``` otherwise it will create conflicts!
@@ -124,6 +128,7 @@ Steps:
 * download [libcurl 8.8.0](https://github.com/curl/curl) and extract it
 * configure libcurl by doing: ```./configure --host=i686-pc-linux-gnu --with-openssl CFLAGS=-m32 CC=/usr/bin/gcc```
 * compile libcurl ```make``` and install it ```cd lib/``` and ```sudo make install```
+* find and copy ```libcurl.a libcrypto.a libssl.a``` inside ```samp-chatbot-root-folder/lib```
 * now you should have everything ready for compilation!
 
 For compiling the samp-chatbot do ```make``` inside the main folder, binaries are inside bin/linux/Release.
