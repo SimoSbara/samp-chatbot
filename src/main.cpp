@@ -73,14 +73,14 @@ static curl_slist* GetHeader(int type, std::string curAPIKey)
 	return headers;
 }
 
-static std::string GetURL(int type, std::string curAPIKey)
+static std::string GetURL(int type, std::string curAPIKey, std::string curModel)
 {
 	switch (type)
 	{
 	case GPT:
 		return "https://api.openai.com/v1/chat/completions";
 	case GEMINI:
-		return "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + curAPIKey;
+		return "https://generativelanguage.googleapis.com/v1beta/models/" + curModel + ":generateContent?key=" + curAPIKey;
 	case LLAMA:
 		return "https://api.groq.com/openai/v1/chat/completions";
 	}
@@ -96,16 +96,27 @@ static nlohmann::json CreateRequest(int type, std::string prompt, std::string cu
 	{
 	case LLAMA:
 	case GPT:
+	{
+		int index = 0;
+
 		requestDoc["model"] = curModel;
-		requestDoc["messages"][0]["role"] = "system";
-		requestDoc["messages"][0]["content"] = curSysPrompt;
-		requestDoc["messages"][1]["role"] = "user";
-		requestDoc["messages"][1]["content"] = prompt;
+		if (!curSysPrompt.empty())
+		{
+			requestDoc["messages"][index]["role"] = "system";
+			requestDoc["messages"][index]["content"] = curSysPrompt;
+			index++;
+		}
+		requestDoc["messages"][index]["role"] = "user";
+		requestDoc["messages"][index]["content"] = prompt;
 		requestDoc["temperature"] = 0;
+	}
 		break;
 	case GEMINI:
-		requestDoc["system_instruction"]["parts"]["text"] = curSysPrompt;
+	{
+		if(!curSysPrompt.empty())
+			requestDoc["system_instruction"]["parts"]["text"] = curSysPrompt;
 		requestDoc["contents"][0]["parts"][0]["text"] = prompt;
+	}
 		break;
 	}
 
@@ -178,7 +189,7 @@ static void DoRequest(std::string prompt, int playerid)
 
 	if (curl) 
 	{
-		std::string url = GetURL(curChatBot, curKey);
+		std::string url = GetURL(curChatBot, curKey, curModel);
 		nlohmann::json requestData = CreateRequest(curChatBot, prompt, curSysPrompt, curModel);
 		curl_slist* headers = GetHeader(curChatBot, curKey);
 
@@ -280,22 +291,20 @@ static cell AMX_NATIVE_CALL n_RequestToChatBot(AMX* amx, cell* params)
 
 	amx_StrParam(amx, params[1], pRequest);
 
-	std::string request(pRequest);
-
 	int playerID = static_cast<int>(params[2]);
 
-	if (!request.empty())
+	if (playerID >= 0 && pRequest)
 	{
-		AIRequest newRequest(playerID, request);
+		AIRequest newRequest(playerID, std::string(pRequest));
 
 		requestLock.lock();
 		requestes.push(newRequest);
 		requestLock.unlock();
 
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static cell AMX_NATIVE_CALL n_SelectChatBot(AMX* amx, cell* params)
@@ -310,10 +319,10 @@ static cell AMX_NATIVE_CALL n_SelectChatBot(AMX* amx, cell* params)
 		chatBotType = type;
 		chatBotLock.unlock();
 
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static cell AMX_NATIVE_CALL n_SetAPIKey(AMX* amx, cell* params)
@@ -323,18 +332,16 @@ static cell AMX_NATIVE_CALL n_SetAPIKey(AMX* amx, cell* params)
 	CHECK_PARAMS(1, "SetAPIKey"); //api key string
 	amx_StrParam(amx, params[1], pKey);
 
-	std::string key(pKey);
-
-	if (!key.empty())
+	if (pKey)
 	{
 		keyLock.lock();
-		apiKey = key;
+		apiKey = std::string(pKey);
 		keyLock.unlock();
 
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static cell AMX_NATIVE_CALL n_SetSystemPrompt(AMX* amx, cell* params)
@@ -344,16 +351,14 @@ static cell AMX_NATIVE_CALL n_SetSystemPrompt(AMX* amx, cell* params)
 	CHECK_PARAMS(1, "SetSystemPrompt"); //system prompt string
 	amx_StrParam(amx, params[1], pPrompt);
 
-	std::string prompt(pPrompt);
+	sysPromptLock.lock();
 
-	if (!prompt.empty())
-	{
-		sysPromptLock.lock();
-		systemPrompt = prompt;
-		sysPromptLock.unlock();
+	if (pPrompt)
+		systemPrompt = std::string(pPrompt);
+	else
+		systemPrompt.clear();
 
-		return 0;
-	}
+	sysPromptLock.unlock();
 
 	return 1;
 }
@@ -365,18 +370,16 @@ static cell AMX_NATIVE_CALL n_SetModel(AMX* amx, cell* params)
 	CHECK_PARAMS(1, "SetModel"); //chatbot model string
 	amx_StrParam(amx, params[1], pModel);
 
-	std::string chatModel(pModel);
-
-	if (!chatModel.empty())
+	if (pModel)
 	{
 		modelLock.lock();
-		model = chatModel;
+		model = std::string(pModel);
 		modelLock.unlock();
 
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 AMX_NATIVE_INFO natives[] =
