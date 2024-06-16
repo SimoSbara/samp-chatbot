@@ -36,7 +36,7 @@ ifeq ($(config),debug)
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -m32 -g -O0 -Wall
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -rdynamic -shared -m32
+  LDFLAGS   += -rdynamic -shared -m32 -L./lib/ -l:libcurl.a -l:libssl.a -l:libcrypto.a
   LIBS      += 
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -58,7 +58,7 @@ ifeq ($(config),release)
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -m32 -ffast-math -fmerge-all-constants -fno-strict-aliasing -fvisibility=hidden -fvisibility-inlines-hidden -O3 -Wall
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -shared -m32
+  LDFLAGS   += -s -shared -m32 -L./lib/ -l:libcurl.a -l:libssl.a -l:libcrypto.a
   LIBS      += 
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
