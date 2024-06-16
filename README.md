@@ -103,9 +103,7 @@ public OnChatBotResponse(prompt[], response[], playerid)
 * Put ```libcurl.dll libcrypto-3.dll libss-3.dll``` inside the root server folder.
   
 ### Only Linux
-* Make sure to delete libcurl if installed on the system. SAMP plugins only work with 32 bit libraries.
 * Put ```samp-chatbot.so``` inside ```plugins``` folder;
-* Put ```libcurl.so.4 libcurl.so``` inside the root server folder.
 
 ## Development
 
