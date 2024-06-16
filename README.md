@@ -18,7 +18,7 @@ Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn im
 
 ### Side Note
 Before choosing a Chat Bot API remember:
-* GPT is not free to use, it requires some credits that you need to purchase
+* GPT is not free to use, it requires some [credits](https://openai.com/api/pricing/) that you need to purchase
 * Gemini is free to use in [certain countries](https://ai.google.dev/gemini-api/docs/available-regions?hl=it)
 * LLAMA is free on https://groq.com/ everywhere and has some premium features (LLAMA hasn't any official API)
 
