@@ -101,6 +101,7 @@ public OnChatBotResponse(prompt[], response[], playerid)
 * Put ```libcurl.dll libcrypto-3.dll libss-3.dll``` inside the root server folder.
   
 ### Only Linux
+* Make sure to delete libcurl if installed on the system. SAMP plugins only work with 32 bit libraries.
 * Put ```samp-chatbot.so``` inside ```plugins``` folder;
 * Put ```libcurl.so.4 libcurl.so``` inside the root server folder.
 
@@ -112,7 +113,7 @@ public OnChatBotResponse(prompt[], response[], playerid)
 Compiling on Windows is pretty simple, it requires Visual Studio 2022 with the latest C++ Windows SDK, libcurl is already provided.
 
 #### Linux
-In Linux (I only tried on Debian based systems) you need to cross-compile curl and openssl in x86 on x64 machine.
+In Linux (I only tried on Debian based systems) you need to cross-compile curl and openssl in 32 bit on 64 bit machine.
 
 Steps:
 * remove libcurl and OpenSSL if it's already install and update with ```ldconfig``` otherwise it will create conflicts!
