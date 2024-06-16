@@ -129,7 +129,7 @@ Steps:
 * find and copy ```libcurl.a libcrypto.a libssl.a``` inside ```samp-chatbot-root-folder/lib```
 * now you should have everything ready for compilation!
 
-For compiling the samp-chatbot do ```make``` inside the main folder, binaries are inside bin/linux/Release.
+For compiling the samp-chatbot do ```make clean``` and ```make``` inside the main folder, binaries are inside bin/linux/Release.
 
 ## License
 This project is licensed under the GNU General Public License v3.0 - see the LICENSE.md file for details
