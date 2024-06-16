@@ -31,7 +31,7 @@ Before choosing a Chat Bot API remember:
 #include <sscanf2>
 
 #define COLOR_RED 0xFF0000FF
-#define COLOR_MAGENTA 0xFFFF00FF
+#define COLOR_MAGENTA 0xFF00FFFF
 
 #define CHATBOT_DIALOG   10
 #define API_KEY          "MY_API_KEY"
@@ -46,6 +46,13 @@ main()
     SetModel("llama3-70b-8192");
     SetAPIKey(API_KEY);
     SetSystemPrompt("You are an assistant inside GTA SAMP");
+}
+
+CMD:disablesysprompt(playerid, params[])
+{
+    SetSystemPrompt("");
+
+    return 1;
 }
 
 CMD:sysprompt(playerid, params[])
