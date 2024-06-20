@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION "v1.3.1"
 
 #include <sdk/plugin.h>
 #ifdef _WIN32
