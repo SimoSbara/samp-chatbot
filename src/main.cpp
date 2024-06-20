@@ -3,6 +3,7 @@
 #include <sdk/plugin.h>
 
 #include <atomic>
+#include <chrono>
 #include <thread>
 #include <string>
 #include <mutex>
@@ -228,6 +229,7 @@ static void DoRequest(std::string prompt, int playerid)
 
 static void RequestsThread()
 {
+	using namespace std::chrono_literals;
 	AIRequest curRequest;
 
 	while (running)
@@ -251,7 +253,10 @@ static void RequestsThread()
 			logprintf("\nnew request: %s\n", prompt.c_str());
 #endif
 			DoRequest(prompt, playerid);
+			curRequest.Clear();	
 		}
+		else
+		    std::this_thread::sleep_for(10ms);
 
 		curRequest.Clear();
 	}
