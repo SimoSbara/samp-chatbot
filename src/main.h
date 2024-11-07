@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define PLUGIN_VERSION "v1.3.1"
+#define PLUGIN_VERSION "v1.3.5"
 
 #include <sdk/plugin.h>
 #ifdef _WIN32
@@ -128,18 +128,18 @@ class AIRequest
 public:
 	AIRequest()
 	{
-		this->playerid = -1;
+		this->id = -1;
 	}
 
-	AIRequest(int playerid, std::string prompt)
+	AIRequest(int id, std::string prompt)
 	{
-		this->playerid = playerid;
+		this->id = id;
 		this->prompt = prompt;
 	}
 
 	void Clear()
 	{
-		this->playerid = -1;
+		this->id = -1;
 		this->prompt.clear();
 	}
 
@@ -148,22 +148,22 @@ public:
 		return this->prompt;
 	}	
 	
-	int GetPlayerID()
+	int GetID()
 	{
-		return this->playerid;
+		return this->id;
 	}
 
 private:
 	std::string prompt;
-	int playerid; //who requests
+	int id; //generic ID
 };
 
 class AIResponse
 {
 public:
-	AIResponse(int playerid, std::string prompt, std::string response)
+	AIResponse(int id, std::string prompt, std::string response)
 	{
-		this->playerid = playerid;
+		this->id = id;
 		this->prompt = prompt;
 		this->response = response;
 	}
@@ -178,15 +178,15 @@ public:
 		return this->response;
 	}
 
-	int GetPlayerID()
+	int GetID()
 	{
-		return this->playerid;
+		return this->id;
 	}
 
 private:
 	std::string prompt; //prompt from the player
 	std::string response; //response of gpt
-	int playerid; //who has requested
+	int id; //ID of the original request
 };
 
 

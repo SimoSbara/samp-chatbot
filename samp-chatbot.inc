@@ -6,7 +6,7 @@
 
 // Natives
 
-native RequestToChatBot(const prompt[], playerid);
+native RequestToChatBot(const prompt[], id);
 native SelectChatBot(type);
 native SetAPIKey(const apiKey[]);
 native SetSystemPrompt(const systemPrompt[]);
@@ -14,4 +14,4 @@ native SetModel(const model[]);
 
 // Callbacks
 
-forward OnChatBotResponse(prompt[], response[], playerid);
+forward OnChatBotResponse(prompt[], response[], id);

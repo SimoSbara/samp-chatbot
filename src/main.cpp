@@ -160,6 +160,8 @@ static std::string GetBotAnswer(int type, nlohmann::json response)
 		catch (std::exception exc)
 		{
 			logprintf("ChatBot Plugin Exception GetBotAnswer(): %s\n", exc.what());
+			logprintf("Chatbot Plugin Exception Response:\n%s", response.dump(4).c_str());
+
 			return response.dump(4).c_str();
 		}
 	}
@@ -167,7 +169,7 @@ static std::string GetBotAnswer(int type, nlohmann::json response)
 	return "";
 }
 
-static void DoRequest(std::string prompt, int playerid)
+static void DoRequest(std::string prompt, int id)
 {
 	std::string response;
 
@@ -220,7 +222,7 @@ static void DoRequest(std::string prompt, int playerid)
 
 	std::string answer = GetBotAnswer(curChatBot, jresponse);
 
-	AIResponse resp(playerid, prompt, answer);
+	AIResponse resp(id, prompt, answer);
 
 	responseLock.lock();
 	responses.push(resp);
@@ -245,14 +247,14 @@ static void RequestsThread()
 		requestLock.unlock();
 
 		std::string prompt = curRequest.GetPrompt();
-		int playerid = curRequest.GetPlayerID();
+		int id = curRequest.GetID();
 
-		if (!prompt.empty() && playerid >= 0)
+		if (!prompt.empty())
 		{
 #ifdef _DEBUG
 			logprintf("\nnew request: %s\n", prompt.c_str());
 #endif
-			DoRequest(prompt, playerid);
+			DoRequest(prompt, id);
 			curRequest.Clear();	
 		}
 		else
@@ -271,7 +273,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 {
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
-	logprintf("\n\nChatBot API Plugin by SimoSbara loaded\n", PLUGIN_VERSION);
+	logprintf("\n\nChatBot API Plugin %s by SimoSbara loaded\n", PLUGIN_VERSION);
 
 	EncodingHelper::Init();
 
@@ -286,22 +288,22 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	running = false;
 
-	logprintf("\n\nChatBot API Plugin by SimoSbara unloaded\n", PLUGIN_VERSION);    
+	logprintf("\n\nChatBot API Plugin %s by SimoSbara unloaded\n", PLUGIN_VERSION);    
 }
 
 static cell AMX_NATIVE_CALL n_RequestToChatBot(AMX* amx, cell* params)
 {
 	char* pRequest = NULL;
 
-	CHECK_PARAMS(2, "RequestToChatBot"); //playerid, request string
+	CHECK_PARAMS(2, "RequestToChatBot"); //id int, request string
 
 	amx_StrParam(amx, params[1], pRequest);
 
-	int playerID = static_cast<int>(params[2]);
+	int id = static_cast<int>(params[2]);
 
-	if (playerID >= 0 && pRequest)
+	if (pRequest)
 	{
-		AIRequest newRequest(playerID, std::string(pRequest));
+		AIRequest newRequest(id, std::string(pRequest));
 
 		requestLock.lock();
 		requestes.push(newRequest);
@@ -431,7 +433,7 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 			if (!amx_FindPublic(*a, "OnChatBotResponse", &amxIndex))
 			{
 				//parametri al contrario
-				amx_Push(*a, response.GetPlayerID());
+				amx_Push(*a, response.GetID());
 				amx_PushString(*a, &amxAddresses[0], NULL, response.GetResponse().c_str(), 0, 0);
 				amx_PushString(*a, &amxAddresses[1], NULL, response.GetPrompt().c_str(), 0, 0);
 				amx_Exec(*a, NULL, amxIndex);
