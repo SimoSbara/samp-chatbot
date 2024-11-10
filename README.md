@@ -29,7 +29,7 @@ Before choosing a Chat Bot API remember:
 #include <core>
 #include <float>
 #include <samp-chatbot>
-#include <pawncmd>
+#include <Pawn.CMD>
 #include <sscanf2>
 
 #define COLOR_RED 0xFF0000FF
@@ -41,6 +41,7 @@ Before choosing a Chat Bot API remember:
 #pragma tabsize 0
 
 new lastResponses[MAX_PLAYERS][1024];
+new lastGlobalResponse[1024];
 
 main()
 {
@@ -81,17 +82,39 @@ CMD:bot(playerid, params[])
     return 1;
 }
 
+CMD:botglobal(playerid, params[])
+{
+    new prompt[512];
+
+    if(sscanf(params, "s[512]", prompt))
+        return SendClientMessage(playerid, COLOR_RED, "/botglobal <prompt>");
+
+    RequestToChatBot(prompt, -1);
+
+    return 1;
+}
+
 CMD:lastresponse(playerid, params[])
 {
     ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastResponses[playerid], "Ok", "");
     return 1;
 }
 
-public OnChatBotResponse(prompt[], response[], playerid)
+public OnChatBotResponse(prompt[], response[], id)
 {
-    format(lastResponses[playerid], 1024, "%s", response);
+    //from a player
+    if(id >= 0 && id < MAX_PLAYERS)
+    {
+        format(lastResponses[id], 1024, "%s", response);
 
-    SendClientMessage(playerid, COLOR_MAGENTA, "Chat Bot Responded! Check it with /lastresponse.");
+        SendClientMessage(id, COLOR_MAGENTA, "Chat Bot Responded! Check it with /lastresponse.");
+    }
+    else //global
+    {
+        format(lastGlobalResponse, 2048, "%s", response);
+
+        SendClientMessageToAll(COLOR_MAGENTA, "Chat Bot Responded Globally! Check it with /lastglobalresponse.");
+    }
 }
 ```
 ## Installation
