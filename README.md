@@ -37,6 +37,7 @@ Before choosing a Chat Bot API remember:
 
 #define CHATBOT_DIALOG   10
 #define API_KEY          "MY_API_KEY"
+#define GLOBAL_REQUEST   -1
 
 #pragma tabsize 0
 
@@ -89,7 +90,7 @@ CMD:botglobal(playerid, params[])
     if(sscanf(params, "s[512]", prompt))
         return SendClientMessage(playerid, COLOR_RED, "/botglobal <prompt>");
 
-    RequestToChatBot(prompt, -1);
+    RequestToChatBot(prompt, GLOBAL_REQUEST);
 
     return 1;
 }
@@ -109,7 +110,7 @@ public OnChatBotResponse(prompt[], response[], id)
 
         SendClientMessage(id, COLOR_MAGENTA, "Chat Bot Responded! Check it with /lastresponse.");
     }
-    else //global
+    else if(id == GLOBAL_REQUEST) //global
     {
         format(lastGlobalResponse, 2048, "%s", response);
 
