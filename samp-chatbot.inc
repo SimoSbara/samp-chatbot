@@ -6,6 +6,7 @@
 
 // Natives
 
+native ClearMemory(id);
 native RequestToChatBot(const prompt[], id);
 native SelectChatBot(type);
 native SetAPIKey(const apiKey[]);

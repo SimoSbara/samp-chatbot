@@ -90,11 +90,14 @@
   <ItemGroup>
     <ClCompile Include="lib\sdk\src\plugin.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\ChatBotHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\sdk\src\plugin.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\EncodingHelper.hpp" />
+    <ClInclude Include="src\ChatBotHelper.h" />
+    <ClInclude Include="src\SampHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="samp-chatbot.rc" />

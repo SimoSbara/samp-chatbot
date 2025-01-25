@@ -1,7 +1,3 @@
-#include "main.h"
-
-#include <sdk/plugin.h>
-
 #include <atomic>
 #include <chrono>
 #include <thread>
@@ -10,223 +6,53 @@
 #include <queue>
 #include <set>
 
-#include "curl/curl.h"
-#include "json.hpp"
-
-#ifdef WIN32
-
-#ifdef _DEBUG
-#pragma comment(lib, "libcurl_debug.lib")
-#else
-#pragma comment(lib, "libcurl.lib")
-#endif
-
-#endif
-
-char EncodingHelper::accentFilters[65536]; //look up table
-std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> EncodingHelper::converter;
+#include "EncodingHelper.hpp"
+#include "SampHelper.h"
+#include "ChatBotHelper.h"
 
 static std::queue<AIRequest> requestes;
 static std::queue<AIResponse> responses;
 
+static std::map<int, ChatMemory> chatMemories;
+static ChatBotParams botParams;
+
 static std::mutex requestLock;
 static std::mutex responseLock;
-static std::mutex keyLock;
-static std::mutex sysPromptLock;
-static std::mutex modelLock;
-static std::mutex chatBotLock;
-
-static std::string apiKey;
-static std::string systemPrompt; //for better context answering
-static std::string model = "gpt-3.5-turbo";
-static unsigned char chatBotType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/)
+static std::mutex paramsLock;
+static std::mutex memoryLock;
 
 static std::thread requestsThread;
 static std::atomic<bool> running;
 
-std::set<AMX*> interfaces;
-
-logprintf_t logprintf;
-
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* response) 
-{
-	size_t totalSize = size * nmemb;
-	response->append((char*)contents, totalSize);
-	return totalSize;
-}
-
-static curl_slist* GetHeader(int type, std::string curAPIKey)
-{
-	curl_slist* headers = NULL;
-
-	switch (type)
-	{
-	case GPT:
-	case LLAMA:
-		headers = curl_slist_append(headers, "Content-Type: application/json");
-		headers = curl_slist_append(headers, ("Authorization: Bearer " + curAPIKey).c_str());
-		break;
-	case GEMINI:
-		headers = curl_slist_append(headers, "Content-Type: application/json");
-		break;
-	}
-
-	return headers;
-}
-
-static std::string GetURL(int type, std::string curAPIKey, std::string curModel)
-{
-	switch (type)
-	{
-	case GPT:
-		return "https://api.openai.com/v1/chat/completions";
-	case GEMINI:
-		return "https://generativelanguage.googleapis.com/v1beta/models/" + curModel + ":generateContent?key=" + curAPIKey;
-	case LLAMA:
-		return "https://api.groq.com/openai/v1/chat/completions";
-	}
-
-	return "";
-}
-
-static nlohmann::json CreateRequest(int type, std::string prompt, std::string curSysPrompt, std::string curModel)
-{
-	nlohmann::json requestDoc;
-
-	switch (type)
-	{
-	case LLAMA:
-	case GPT:
-	{
-		int index = 0;
-
-		requestDoc["model"] = curModel;
-		if (!curSysPrompt.empty())
-		{
-			requestDoc["messages"][index]["role"] = "system";
-			requestDoc["messages"][index]["content"] = curSysPrompt;
-			index++;
-		}
-		requestDoc["messages"][index]["role"] = "user";
-		requestDoc["messages"][index]["content"] = prompt;
-		requestDoc["temperature"] = 0;
-	}
-		break;
-	case GEMINI:
-	{
-		if(!curSysPrompt.empty())
-			requestDoc["system_instruction"]["parts"]["text"] = curSysPrompt;
-		requestDoc["contents"][0]["parts"][0]["text"] = prompt;
-	}
-		break;
-	}
-
-	return requestDoc;
-}
-
-static std::string GetBotAnswer(int type, nlohmann::json response)
-{
-	if (!response.empty())
-	{
-		try
-		{
-			std::string answer;
-
-			try
-			{
-				nlohmann::json error = response.at("error");
-
-				if (!error.empty())
-					return response.dump(4).c_str();
-			}
-			catch (std::exception)
-			{
-				//errore non trovato
-			}
-
-			switch (type)
-			{
-			case LLAMA:
-			case GPT:
-				answer = response.at("choices").at(0).at("message").at("content");
-				break;
-			case GEMINI:
-				answer = response.at("candidates").at(0).at("content").at("parts").at(0).at("text");
-				break;
-			}
-
-			return EncodingHelper::FilterAccents(answer);
-		}
-		catch (std::exception exc)
-		{
-			logprintf("ChatBot Plugin Exception GetBotAnswer(): %s\n", exc.what());
-			logprintf("Chatbot Plugin Exception Response:\n%s", response.dump(4).c_str());
-
-			return response.dump(4).c_str();
-		}
-	}
-
-	return "";
-}
-
 static void DoRequest(std::string prompt, int id)
 {
-	std::string response;
+	std::string answer;
 
-	keyLock.lock();
-	std::string curKey = apiKey;
-	keyLock.unlock();
+	paramsLock.lock();
+	ChatBotParams curParams = botParams;
+	paramsLock.unlock();
 
-	sysPromptLock.lock();
-	std::string curSysPrompt = systemPrompt;
-	sysPromptLock.unlock();
+	ChatMemory memory;
 
-	modelLock.lock();
-	std::string curModel = model;
-	modelLock.unlock();
+	//lo trovo?
+	memoryLock.lock();
+	if (chatMemories.find(id) != chatMemories.end())
+		memory = chatMemories[id];
+	memoryLock.unlock();
 
-	chatBotLock.lock();
-	int curChatBot = chatBotType;
-	chatBotLock.unlock();
-
-	CURL* curl = curl_easy_init();
-
-	if (curl) 
+	if (ChatBotHelper::DoRequest(answer, prompt, curParams, memory))
 	{
-		std::string url = GetURL(curChatBot, curKey, curModel);
-		nlohmann::json requestData = CreateRequest(curChatBot, prompt, curSysPrompt, curModel);
-		curl_slist* headers = GetHeader(curChatBot, curKey);
+		AIResponse response(id, prompt, answer);
 
-		std::string requestDataStr = requestData.dump().c_str();
+		responseLock.lock();
+		responses.push(response);
+		responseLock.unlock();
 
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestDataStr.c_str());
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, requestDataStr.length());
-		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-		CURLcode res = curl_easy_perform(curl);
-
-		if (res != CURLE_OK) 
-		{
-			logprintf("\n\nChat Bot Request Failed! Error: %s\n", curl_easy_strerror(res));
-		}
-
-		curl_easy_cleanup(curl);
-		curl_slist_free_all(headers);
+		//aggiorno la memoria
+		memoryLock.lock();
+		chatMemories[id] = memory;
+		memoryLock.unlock();
 	}
-
-	nlohmann::json jresponse = nlohmann::json::parse(response);
-
-	std::string answer = GetBotAnswer(curChatBot, jresponse);
-
-	AIResponse resp(id, prompt, answer);
-
-	responseLock.lock();
-	responses.push(resp);
-	responseLock.unlock();
 }
 
 static void RequestsThread()
@@ -264,6 +90,12 @@ static void RequestsThread()
 	}
 }
 
+void InitParams()
+{
+	botParams.model = "gpt-3.5-turbo"; //GPT!!! goooo
+	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/)
+}
+
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 {
 	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES | SUPPORTS_PROCESS_TICK;
@@ -276,6 +108,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	logprintf("\n\nChatBot API Plugin %s by SimoSbara loaded\n", PLUGIN_VERSION);
 
 	EncodingHelper::Init();
+	InitParams();
 
 	running = true;
 	requestsThread = std::thread(RequestsThread);
@@ -289,6 +122,26 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 	running = false;
 
 	logprintf("\n\nChatBot API Plugin %s by SimoSbara unloaded\n", PLUGIN_VERSION);    
+}
+
+static cell AMX_NATIVE_CALL n_ClearMemory(AMX* amx, cell* params)
+{
+	CHECK_PARAMS(1, "ClearMemory"); //id int, request string
+
+	int id = static_cast<int>(params[1]);
+
+	memoryLock.lock();
+	if (chatMemories.find(id) != chatMemories.end())
+	{
+		chatMemories[id].Clear();
+		memoryLock.unlock();
+		
+		return 1;
+	}
+
+	memoryLock.unlock();
+
+	return 0;
 }
 
 static cell AMX_NATIVE_CALL n_RequestToChatBot(AMX* amx, cell* params)
@@ -323,9 +176,9 @@ static cell AMX_NATIVE_CALL n_SelectChatBot(AMX* amx, cell* params)
 
 	if (type >= GPT && type < NUM_CHAT_BOTS)
 	{
-		chatBotLock.lock();
-		chatBotType = type;
-		chatBotLock.unlock();
+		paramsLock.lock();
+		botParams.botType = type;
+		paramsLock.unlock();
 
 		return 1;
 	}
@@ -342,9 +195,9 @@ static cell AMX_NATIVE_CALL n_SetAPIKey(AMX* amx, cell* params)
 
 	if (pKey)
 	{
-		keyLock.lock();
-		apiKey = std::string(pKey);
-		keyLock.unlock();
+		paramsLock.lock();
+		botParams.apikey = std::string(pKey);
+		paramsLock.unlock();
 
 		return 1;
 	}
@@ -359,14 +212,14 @@ static cell AMX_NATIVE_CALL n_SetSystemPrompt(AMX* amx, cell* params)
 	CHECK_PARAMS(1, "SetSystemPrompt"); //system prompt string
 	amx_StrParam(amx, params[1], pPrompt);
 
-	sysPromptLock.lock();
+	paramsLock.lock();
 
 	if (pPrompt)
-		systemPrompt = std::string(pPrompt);
+		botParams.systemPrompt = std::string(pPrompt);
 	else
-		systemPrompt.clear();
+		botParams.systemPrompt.clear();
 
-	sysPromptLock.unlock();
+	paramsLock.unlock();
 
 	return 1;
 }
@@ -380,9 +233,9 @@ static cell AMX_NATIVE_CALL n_SetModel(AMX* amx, cell* params)
 
 	if (pModel)
 	{
-		modelLock.lock();
-		model = std::string(pModel);
-		modelLock.unlock();
+		paramsLock.lock();
+		botParams.model = std::string(pModel);
+		paramsLock.unlock();
 
 		return 1;
 	}
@@ -392,6 +245,7 @@ static cell AMX_NATIVE_CALL n_SetModel(AMX* amx, cell* params)
 
 AMX_NATIVE_INFO natives[] =
 {
+	{ "ClearMemory", n_ClearMemory },
 	{ "RequestToChatBot", n_RequestToChatBot },
 	{ "SelectChatBot", n_SelectChatBot },
 	{ "SetAPIKey", n_SetAPIKey },

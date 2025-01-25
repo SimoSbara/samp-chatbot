@@ -1,33 +1,12 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 
-#define PLUGIN_VERSION "v1.3.5"
-
-#include <sdk/plugin.h>
-#ifdef _WIN32
-	#include <windows.h>
-#endif
-
-#include <wchar.h>
-#include <cstring>
 #include <string>
+#include <vector>
 #include <locale>
 #include <codecvt>
 
-#define CHECK_PARAMS(m, n) \
-	if (params[0] != (m * 4)) \
-	{ \
-		logprintf("*** %s: Expecting %d parameter(s), but found %d", n, m, params[0] / 4); \
-		return 0; \
-	}
-
-enum ChatBots
-{
-	GPT = 0,
-	GEMINI,
-	LLAMA,
-	NUM_CHAT_BOTS
-};
+static char accentFilters[65536]; //look up table
+static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
 //IT: artigianale...
 //EN: homemade
@@ -116,83 +95,4 @@ private:
 		}
 		return false;
 	}
-
-private:
-
-	static char accentFilters[65536]; //look up table
-	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 };
-
-class AIRequest
-{
-public:
-	AIRequest()
-	{
-		this->id = -1;
-	}
-
-	AIRequest(int id, std::string prompt)
-	{
-		this->id = id;
-		this->prompt = prompt;
-	}
-
-	void Clear()
-	{
-		this->id = -1;
-		this->prompt.clear();
-	}
-
-	std::string GetPrompt()
-	{
-		return this->prompt;
-	}	
-	
-	int GetID()
-	{
-		return this->id;
-	}
-
-private:
-	std::string prompt;
-	int id; //generic ID
-};
-
-class AIResponse
-{
-public:
-	AIResponse(int id, std::string prompt, std::string response)
-	{
-		this->id = id;
-		this->prompt = prompt;
-		this->response = response;
-	}
-
-	std::string GetPrompt()
-	{
-		return this->prompt;
-	}
-
-	std::string GetResponse()
-	{
-		return this->response;
-	}
-
-	int GetID()
-	{
-		return this->id;
-	}
-
-private:
-	std::string prompt; //prompt from the player
-	std::string response; //response of gpt
-	int id; //ID of the original request
-};
-
-
-typedef void (*logprintf_t)(const char*, ...);
-
-extern logprintf_t logprintf;
-extern void *pAMXFunctions;
-
-#endif
