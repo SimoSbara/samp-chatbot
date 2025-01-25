@@ -99,13 +99,13 @@ json ChatBotHelper::CreateRequestDocument(const std::string request, const ChatB
 		{
 			Message message = memory.GetMessageFromIndex(i);
 
-			requestDoc["contents"][index]["parts"][0]["role"] = (message.isBot) ? "model" : "user";
+			requestDoc["contents"][index]["role"] = (message.isBot) ? "model" : "user";
 			requestDoc["contents"][index]["parts"][0]["text"] = message.msg;
 
 			index++;
 		}
 
-		requestDoc["contents"][index]["parts"][0]["role"] = "user";
+		requestDoc["contents"][index]["role"] = "user";
 		requestDoc["contents"][index]["parts"][0]["text"] = request;
 	}
 	break;
