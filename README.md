@@ -52,6 +52,18 @@ main()
     SetSystemPrompt("You are an assistant inside GTA SAMP");
 }
 
+CMD:clearmemory(playerid, params[])
+{
+    new id;
+
+    if(sscanf(params, "d", id))
+        return SendClientMessage(playerid, COLOR_RED, "/clearmemory <id>");
+
+    ClearMemory(id);
+
+    return 1;
+}
+
 CMD:disablesysprompt(playerid, params[])
 {
     SetSystemPrompt("");
