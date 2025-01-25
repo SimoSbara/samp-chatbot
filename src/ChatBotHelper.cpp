@@ -93,7 +93,20 @@ json ChatBotHelper::CreateRequestDocument(const std::string request, const ChatB
 	{
 		if (!params.systemPrompt.empty())
 			requestDoc["system_instruction"]["parts"]["text"] = params.systemPrompt;
-		requestDoc["contents"][0]["parts"][0]["text"] = request;
+
+		//aggiungo memoria
+		for (int i = 0; i < memory.GetSize(); i++)
+		{
+			Message message = memory.GetMessageFromIndex(i);
+
+			requestDoc["contents"][index]["parts"][0]["role"] = (message.isBot) ? "model" : "user";
+			requestDoc["contents"][index]["parts"][0]["text"] = message.msg;
+
+			index++;
+		}
+
+		requestDoc["contents"][index]["parts"][0]["role"] = "user";
+		requestDoc["contents"][index]["parts"][0]["text"] = request;
 	}
 	break;
 	}
