@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstring>
 #include <string>
@@ -6,94 +6,224 @@
 #include <locale>
 #include <codecvt>
 
-static char accentFilters[65536]; //look up table
-static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+#include "SampHelper.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <iconv.h>
+#endif
+
+enum Encodings
+{
+	W1252 = 0, //windows 1252 for latin
+	GB2312, //GB2312 for simplified chinese
+	W1251, //windows 1251 for cyrilic
+	NUM_ENCODINGS
+};
 
 //IT: artigianale...
 //EN: homemade
 class EncodingHelper
 {
 public:
-	static void Init()
+	//maledette lingue diverse!!! (da encoding scelto a utf8)
+	static std::string ConvertToUTF8(std::string input, uint8_t inputEncoding)
 	{
-		memset(accentFilters, 0, 65536 * sizeof(char));
+#ifdef _WIN32
+		int inputCodePage;
 
-		//remove all type of accents
-		AddFilter(L'\xe0', 6, 'a');
-		AddFilter(L'\xe8', 4, 'e');
-		AddFilter(L'\xec', 4, 'i');
-		AddFilter(L'\xf2', 5, 'o');
-		AddFilter(L'\xf9', 4, 'u');
+		switch (inputEncoding)
+		{
+		default:
+		case W1252:
+		{
+			inputCodePage = 1252;
+			break;
+		}
+		case GB2312: inputCodePage = 936; break;
+		case W1251: inputCodePage = 1251; break;
+		}
 
-		AddFilter(L'\xc0', 6, 'A');
-		AddFilter(L'\xc8', 4, 'E');
-		AddFilter(L'\xcc', 4, 'I');
-		AddFilter(L'\xd2', 5, 'O');
-		AddFilter(L'\xd9', 4, 'U');
-	}
+		//verifico se va bene
+		int wideLen = MultiByteToWideChar(inputCodePage, 0, input.c_str(), input.size(), nullptr, 0);
 
-	static std::wstring Convert(std::string input)
-	{
-		return converter.from_bytes(input);
-	}
-
-	static std::string Convert(std::wstring input)
-	{
-		return converter.to_bytes(input);
-	}
-
-	static std::string FilterAccents(std::string toFilter)
-	{
-		if (toFilter.length() <= 0)
+		if (wideLen == 0)
+		{
+			logprintf("\n\nChatBot UTF8 conversion error: wideLen = 0\n");
 			return "";
-
-		std::wstring input = Convert(toFilter);
-
-		int length = input.length();
-		int curLength = length;
-
-		wchar_t* text = new wchar_t[length * 2 + 1];
-
-		if (text)
-		{
-			memset(text, 0, (length * 2 + 1) * sizeof(wchar_t));
-			memcpy(text, input.c_str(), length * sizeof(wchar_t));
-
-			for (int i = 0; i < length; i++)
-			{
-				if (FilterChar(text + i, curLength - i - 1))
-					curLength++;
-			}
-
-			std::wstring out(text, curLength);
-
-			delete[] text;
-
-			return converter.to_bytes(out);
 		}
 
-		return toFilter;
-	}
+		std::vector<wchar_t> utf16Str(wideLen);
+		MultiByteToWideChar(inputCodePage, 0, input.c_str(), input.size(), utf16Str.data(), wideLen);
 
-private:
-	static inline void AddFilter(wchar_t start, wchar_t count, char replace)
-	{
-		for (wchar_t i = start; i < start + count; i++)
-			accentFilters[i] = replace;
-	}
-
-	static inline bool FilterChar(wchar_t* ptr, int endCount)
-	{
-		wchar_t newChar = *(accentFilters + *ptr);
-
-		if (newChar)
+		//verifico se va bene da utf16 a utf8
+		int utf8Len = WideCharToMultiByte(CP_UTF8, 0, utf16Str.data(), wideLen, nullptr, 0, nullptr, nullptr);
+		
+		if (utf8Len == 0) 
 		{
-			*ptr = newChar;
-			memcpy(ptr + 2, ptr + 1, endCount * sizeof(wchar_t));
-			*(ptr + 1) = L'\'';
-
-			return true;
+			logprintf("\n\nChatBot UTF8 conversion error: utf8Len = 0\n");
+			return "";
 		}
-		return false;
+
+		std::vector<char> utf8Str(utf8Len);
+		WideCharToMultiByte(CP_UTF8, 0, utf16Str.data(), wideLen, utf8Str.data(), utf8Len, nullptr, nullptr);
+
+		return std::string(utf8Str.begin(), utf8Str.end());
+#else
+		char* inputCodePage;
+
+		switch (inputEncoding)
+		{
+		default:
+		case W1252:
+		{
+			inputCodePage = "WINDOWS-1252";
+			break;
+		}
+		case GB2312: inputCodePage = "GB2312"; break;
+		case W1251: inputCodePage = "WINDOWS-1251"; break;
+		}
+
+		iconv_t handle = iconv_open(inputCodePage, "UTF8");
+
+		if (handle == (iconv_t)-1)
+		{
+			logprintf("\n\nChatBot UTF8 conversion error: iconv_open failed\n");
+			return "";
+		}
+
+		size_t outputLen = input.size() * 4; //per stare sereni
+		char* output = new char[outputLen];
+
+		if (!output)
+		{
+			iconv_close(handle);
+			logprintf("\n\nChatBot UTF8 conversion error: output malloc failed\n");
+			return "";
+		}
+
+		memset(output, 0, outputLen);
+
+		char* inBuf = (char*)input.c_str();
+		char* outBuf = output;
+		size_t inBytesLeft = input.size();
+		size_t outBytesLeft = outputLen;
+
+		if (iconv(handle, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft) == (size_t)-1)
+		{
+			delete[] output;
+			iconv_close(handle);
+			logprintf("\n\nChatBot UTF8 conversion error: iconv failed\n");
+			return "";
+		}
+
+		iconv_close(handle);
+
+		std::string result(outBuf, strlen(outBuf));
+		delete[] output;
+
+		return result;
+#endif
+	}
+
+	//gli accenti sono micidiali!!!! (da utf8 a l'encoding scelto)
+	static std::string ConvertToWideByte(std::string input, uint8_t outputEncoding)
+	{
+#ifdef _WIN32
+		int outputCodePage;
+
+		switch (outputEncoding)
+		{
+		default:
+		case W1252:
+		{
+			outputCodePage = 1252;
+			break;
+		}
+		case GB2312: outputCodePage = 936; break;
+		case W1251: outputCodePage = 1251; break;
+		}
+
+		//verifico se va bene
+		int wideLen = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.size(), nullptr, 0);
+
+		if (wideLen == 0)
+		{
+			logprintf("\n\nChatBot WideByte conversion error: wideLen = 0\n");
+			return "";
+		}
+
+		std::vector<wchar_t> utf16Str(wideLen);
+		MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.size(), utf16Str.data(), wideLen);
+
+		//verifico se va bene da utf16 a encoding scelto
+		int encLen = WideCharToMultiByte(outputCodePage, 0, utf16Str.data(), wideLen, nullptr, 0, nullptr, nullptr);
+
+		if (encLen == 0)
+		{
+			logprintf("\n\nChatBot WideByte conversion error: encLen = 0\n");
+			return "";
+		}
+
+		std::vector<char> encStr(encLen);
+		WideCharToMultiByte(outputCodePage, 0, utf16Str.data(), wideLen, encStr.data(), encLen, nullptr, nullptr);
+
+		return std::string(encStr.begin(), encStr.end());
+#else
+		char* outputCodePage;
+
+		switch (outputEncoding)
+		{
+		default:
+		case W1252:
+		{
+			outputCodePage = "WINDOWS-1252";
+			break;
+		}
+		case GB2312: outputCodePage = "GB2312"; break;
+		case W1251: outputCodePage = "WINDOWS-1251"; break;
+		}
+
+		iconv_t handle = iconv_open("UTF8", outputCodePage);
+
+		if (handle == (iconv_t)-1)
+		{
+			logprintf("\n\nChatBot WideByte conversion error: iconv_open failed\n");
+			return "";
+		}
+
+		size_t outputLen = input.size() * 4; //per stare sereni
+		char* output = new char[outputLen];
+
+		if (!output)
+		{
+			iconv_close(handle);
+			logprintf("\n\nChatBot WideByte conversion error: output malloc failed\n");
+			return "";
+		}
+
+		memset(output, 0, outputLen);
+
+		char* inBuf = (char*)input.c_str();
+		char* outBuf = output;
+		size_t inBytesLeft = input.size();
+		size_t outBytesLeft = outputLen;
+
+		if (iconv(handle, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft) == (size_t)-1)
+		{
+			delete[] output;
+			iconv_close(handle);
+			logprintf("\n\nChatBot WideByte conversion error: iconv failed\n");
+			return "";
+		}
+
+		iconv_close(handle);
+
+		std::string result(outBuf, strlen(outBuf));
+		delete[] output;
+
+		return result;
+#endif
 	}
 };

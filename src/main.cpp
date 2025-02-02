@@ -1,4 +1,4 @@
-#include <atomic>
+﻿#include <atomic>
 #include <chrono>
 #include <thread>
 #include <string>
@@ -78,7 +78,12 @@ static void RequestsThread()
 		if (!prompt.empty())
 		{
 #ifdef _DEBUG
-			logprintf("\nnew request: %s\n", prompt.c_str());
+			paramsLock.lock();
+			ChatBotParams curParams = botParams;
+			paramsLock.unlock();
+
+			std::string encPrompt = EncodingHelper::ConvertToWideByte(prompt, curParams.encoding);
+			logprintf("\nnew request: %s\n", encPrompt.c_str());
 #endif
 			DoRequest(prompt, id);
 			curRequest.Clear();	
@@ -93,7 +98,8 @@ static void RequestsThread()
 void InitParams()
 {
 	botParams.model = "gpt-3.5-turbo"; //GPT!!! goooo
-	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/)
+	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/), 3 - DOUBAO
+	botParams.encoding = W1252; //windows 1252
 }
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
@@ -107,7 +113,6 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 	logprintf("\n\nChatBot API Plugin %s by SimoSbara loaded\n", PLUGIN_VERSION);
 
-	EncodingHelper::Init();
 	InitParams();
 
 	running = true;
@@ -124,9 +129,27 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 	logprintf("\n\nChatBot API Plugin %s by SimoSbara unloaded\n", PLUGIN_VERSION);    
 }
 
+static cell AMX_NATIVE_CALL n_SetChatBotEncoding(AMX* amx, cell* params)
+{
+	CHECK_PARAMS(1, "SetChatBotEncoding"); //encoding int
+
+	int newEncoding = static_cast<int>(params[1]);
+
+	if (newEncoding >= W1252 && newEncoding < NUM_ENCODINGS)
+	{
+		paramsLock.lock();
+		botParams.encoding = newEncoding;
+		paramsLock.unlock();
+
+		return 1;
+	}
+
+	return 0;
+}
+
 static cell AMX_NATIVE_CALL n_ClearMemory(AMX* amx, cell* params)
 {
-	CHECK_PARAMS(1, "ClearMemory"); //id int, request string
+	CHECK_PARAMS(1, "ClearMemory"); //id int
 
 	int id = static_cast<int>(params[1]);
 
@@ -156,7 +179,13 @@ static cell AMX_NATIVE_CALL n_RequestToChatBot(AMX* amx, cell* params)
 
 	if (pRequest)
 	{
-		AIRequest newRequest(id, std::string(pRequest));
+		paramsLock.lock();
+		int encoding = botParams.encoding;
+		paramsLock.unlock();
+
+		std::string requestStr = EncodingHelper::ConvertToUTF8(pRequest, encoding);
+
+		AIRequest newRequest(id, requestStr);
 
 		requestLock.lock();
 		requestes.push(newRequest);
@@ -215,7 +244,7 @@ static cell AMX_NATIVE_CALL n_SetSystemPrompt(AMX* amx, cell* params)
 	paramsLock.lock();
 
 	if (pPrompt)
-		botParams.systemPrompt = std::string(pPrompt);
+		botParams.systemPrompt = EncodingHelper::ConvertToUTF8(pPrompt, botParams.encoding);
 	else
 		botParams.systemPrompt.clear();
 
@@ -245,6 +274,7 @@ static cell AMX_NATIVE_CALL n_SetModel(AMX* amx, cell* params)
 
 AMX_NATIVE_INFO natives[] =
 {
+	{ "SetChatBotEncoding", n_SetChatBotEncoding },
 	{ "ClearMemory", n_ClearMemory },
 	{ "RequestToChatBot", n_RequestToChatBot },
 	{ "SelectChatBot", n_SelectChatBot },
@@ -275,8 +305,16 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 		responses.pop();
 		responseLock.unlock();
 
+		paramsLock.lock();
+		int encoding = botParams.encoding;
+		paramsLock.unlock();
+
+		//conversione a encoding originale
+		std::string resp = EncodingHelper::ConvertToWideByte(response.GetResponse(), encoding);
+		std::string prompt = EncodingHelper::ConvertToWideByte(response.GetPrompt(), encoding);
+
 #ifdef _DEBUG
-		logprintf("\nnew response: %s\n", response.GetResponse().c_str());
+		logprintf("\nnew response: %s\n", resp.c_str());
 #endif
 
 		for (std::set<AMX*>::iterator a = interfaces.begin(); a != interfaces.end(); a++)
@@ -288,8 +326,8 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 			{
 				//parametri al contrario
 				amx_Push(*a, response.GetID());
-				amx_PushString(*a, &amxAddresses[0], NULL, response.GetResponse().c_str(), 0, 0);
-				amx_PushString(*a, &amxAddresses[1], NULL, response.GetPrompt().c_str(), 0, 0);
+				amx_PushString(*a, &amxAddresses[0], NULL, resp.c_str(), 0, 0);
+				amx_PushString(*a, &amxAddresses[1], NULL, prompt.c_str(), 0, 0);
 				amx_Exec(*a, NULL, amxIndex);
 				amx_Release(*a, amxAddresses[0]);
 				amx_Release(*a, amxAddresses[1]);

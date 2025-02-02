@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 #include <json.hpp>
@@ -12,6 +12,7 @@ enum ChatBots
 	GPT = 0,
 	GEMINI,
 	LLAMA,
+	DOUBAO,
 	NUM_CHAT_BOTS
 };
 
@@ -139,6 +140,7 @@ struct ChatBotParams
 	std::string systemPrompt;
 	std::string model;
 	int botType; //enum ChatBots
+	int encoding; //enum Encodings
 };
 
 class ChatBotHelper
@@ -147,7 +149,7 @@ public:
 	static bool DoRequest(std::string& response, const std::string request, const ChatBotParams& params, ChatMemory& memory);
 
 private:
-	static std::string GetBotAnswer(int botType, nlohmann::json response);
+	static std::string GetBotAnswer(const ChatBotParams& params, nlohmann::json response);
 
 	static nlohmann::json CreateRequestDocument(const std::string request, const ChatBotParams& params, const ChatMemory& memory);
 

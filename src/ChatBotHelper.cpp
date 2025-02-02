@@ -1,4 +1,4 @@
-#include "ChatBotHelper.h"
+﻿#include "ChatBotHelper.h"
 #include "EncodingHelper.hpp"
 #include "SampHelper.h"
 
@@ -25,6 +25,7 @@ curl_slist* ChatBotHelper::GetHeader(const ChatBotParams& params)
 
 	switch (params.botType)
 	{
+	case DOUBAO:
 	case GPT:
 	case LLAMA:
 		headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -48,6 +49,8 @@ std::string ChatBotHelper::GetURL(const ChatBotParams& params)
 		return "https://generativelanguage.googleapis.com/v1beta/models/" + params.model + ":generateContent?key=" + params.apikey;
 	case LLAMA:
 		return "https://api.groq.com/openai/v1/chat/completions";
+	case DOUBAO:
+		return "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
 	}
 
 	return "";
@@ -60,6 +63,7 @@ json ChatBotHelper::CreateRequestDocument(const std::string request, const ChatB
 
 	switch (params.botType)
 	{
+	case DOUBAO:
 	case LLAMA:
 	case GPT:
 	{
@@ -143,7 +147,7 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 		if (res == CURLE_OK)
 		{
 			nlohmann::json jresponse = nlohmann::json::parse(curlResponse);
-			response = GetBotAnswer(params.botType, jresponse);
+			response = GetBotAnswer(params, jresponse);
 
 			//aggiungo nella memoria
 			memory.AddUserMessage(request);
@@ -163,7 +167,7 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 	return false;
 }
 
-std::string ChatBotHelper::GetBotAnswer(int botType, nlohmann::json response)
+std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::json response)
 {
 	if (!response.empty())
 	{
@@ -183,8 +187,9 @@ std::string ChatBotHelper::GetBotAnswer(int botType, nlohmann::json response)
 				//errore non trovato
 			}
 
-			switch (botType)
+			switch (params.botType)
 			{
+			case DOUBAO:
 			case LLAMA:
 			case GPT:
 				answer = response.at("choices").at(0).at("message").at("content");
@@ -194,7 +199,7 @@ std::string ChatBotHelper::GetBotAnswer(int botType, nlohmann::json response)
 				break;
 			}
 
-			return EncodingHelper::FilterAccents(answer);
+			return answer;
 		}
 		catch (std::exception exc)
 		{
