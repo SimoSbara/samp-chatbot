@@ -12,6 +12,7 @@
 #include <Windows.h>
 #else
 #include <iconv.h>
+#include <errno.h>
 #endif
 
 enum Encodings
@@ -71,7 +72,7 @@ public:
 
 		return std::string(utf8Str.begin(), utf8Str.end());
 #else
-		char* inputCodePage;
+		std::string inputCodePage;
 
 		switch (inputEncoding)
 		{
@@ -85,7 +86,7 @@ public:
 		case W1251: inputCodePage = "WINDOWS-1251"; break;
 		}
 
-		iconv_t handle = iconv_open(inputCodePage, "UTF8");
+		iconv_t handle = iconv_open("UTF8", inputCodePage.c_str());
 
 		if (handle == (iconv_t)-1)
 		{
@@ -112,15 +113,26 @@ public:
 
 		if (iconv(handle, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft) == (size_t)-1)
 		{
+			std::string err;
+
+			if(errno == E2BIG)
+				err = "There is not sufficient room at *outbuf.";
+			else if(errno == EILSEQ)
+				err = "An invalid multibyte sequence has been encountered in the input.";
+			else if(errno == EINVAL)
+				err = "An incomplete multibyte sequence has been encountered in the input.";
+			else
+				err = "Generic Error";
+
+			logprintf("\n\nChatBot UTF8 conversion iconv failed: %s\n", err.c_str());
 			delete[] output;
 			iconv_close(handle);
-			logprintf("\n\nChatBot UTF8 conversion error: iconv failed\n");
 			return "";
 		}
 
 		iconv_close(handle);
 
-		std::string result(outBuf, strlen(outBuf));
+		std::string result(output, strlen(output));
 		delete[] output;
 
 		return result;
@@ -171,7 +183,7 @@ public:
 
 		return std::string(encStr.begin(), encStr.end());
 #else
-		char* outputCodePage;
+		std::string outputCodePage;
 
 		switch (outputEncoding)
 		{
@@ -185,7 +197,7 @@ public:
 		case W1251: outputCodePage = "WINDOWS-1251"; break;
 		}
 
-		iconv_t handle = iconv_open("UTF8", outputCodePage);
+		iconv_t handle = iconv_open(outputCodePage.c_str(), "UTF8");
 
 		if (handle == (iconv_t)-1)
 		{
@@ -212,15 +224,27 @@ public:
 
 		if (iconv(handle, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft) == (size_t)-1)
 		{
+			std::string err;
+
+			if(errno == E2BIG)
+				err = "There is not sufficient room at *outbuf.";
+			else if(errno == EILSEQ)
+				err = "An invalid multibyte sequence has been encountered in the input.";
+			else if(errno == EINVAL)
+				err = "An incomplete multibyte sequence has been encountered in the input.";
+			else
+				err = "Generic Error";
+
+			logprintf("\n\nChatBot WideByte conversion iconv failed: %s\n", err.c_str());
+
 			delete[] output;
 			iconv_close(handle);
-			logprintf("\n\nChatBot WideByte conversion error: iconv failed\n");
 			return "";
 		}
 
 		iconv_close(handle);
 
-		std::string result(outBuf, strlen(outBuf));
+		std::string result(output, strlen(output));
 		delete[] output;
 
 		return result;

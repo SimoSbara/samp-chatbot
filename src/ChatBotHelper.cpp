@@ -182,7 +182,7 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 				if (!error.empty())
 					return response.dump(4).c_str();
 			}
-			catch (std::exception)
+			catch (...)
 			{
 				//errore non trovato
 			}
@@ -201,7 +201,7 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 
 			return answer;
 		}
-		catch (std::exception exc)
+		catch (std::exception &exc)
 		{
 			logprintf("ChatBot Plugin Exception GetBotAnswer(): %s\n", exc.what());
 			logprintf("Chatbot Plugin Exception Response:\n%s", response.dump(4).c_str());
