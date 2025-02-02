@@ -11,7 +11,7 @@ The following Chat Bots API are implemented:
 * [Chat GPT](https://platform.openai.com/docs/quickstart)
 * [Gemini AI](https://ai.google.dev/)
 * [LLAMA](https://groq.com/)
-* [Doubao](www.doubao.com)
+* [Doubao](https://www.doubao.com/)
 
 This plugin can permit arbitrary model and system instruction choise using natives in runtime.
 
