@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-#define PLUGIN_VERSION "v1.5"
+#define PLUGIN_VERSION "v1.7"
 
 #include <sdk/plugin.h>
 #include <set>
