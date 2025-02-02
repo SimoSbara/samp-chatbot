@@ -10,7 +10,8 @@ It works for both SAMP and [open.mp](https://www.open.mp/).
 The following Chat Bots API are implemented:
 * [Chat GPT](https://platform.openai.com/docs/quickstart)
 * [Gemini AI](https://ai.google.dev/)
-* [LLAMA](https://groq.com/) 
+* [LLAMA](https://groq.com/)
+* [Doubao](www.doubao.com)
 
 This plugin can permit arbitrary model and system instruction choise using natives in runtime.
 
@@ -18,9 +19,10 @@ Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn im
 
 ### Side Note
 Before choosing a Chat Bot API remember:
-* GPT is not free to use, it requires some [credits](https://openai.com/api/pricing/) that you need to purchase
-* Gemini is free to use in [certain countries](https://ai.google.dev/gemini-api/docs/available-regions?hl=it)
-* LLAMA is free on https://groq.com/ everywhere and has some premium features (LLAMA hasn't any official API)
+* GPT is not free to use, it requires some [credits](https://openai.com/api/pricing/) that you need to purchase;
+* Gemini is free to use in [certain countries](https://ai.google.dev/gemini-api/docs/available-regions?hl=it);
+* LLAMA is free on https://groq.com/ everywhere and has some premium features (LLAMA hasn't any official API);
+* Doubao supports only Chinese.
 
 
 ## Example of use
@@ -46,6 +48,7 @@ new lastGlobalResponse[1024];
 
 main()
 {
+    SetChatBotEncoding(W1252);
     SelectChatBot(LLAMA);
     SetModel("llama3-70b-8192");
     SetAPIKey(API_KEY);
