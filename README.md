@@ -12,6 +12,7 @@ The following Chat Bots API are implemented:
 * [Gemini AI](https://ai.google.dev/)
 * [LLAMA](https://groq.com/)
 * [Doubao](https://www.doubao.com/)
+* [DeepSeek](https://www.deepseek.com/)
 
 This plugin can permit arbitrary model and system instruction choise using natives in runtime.
 
@@ -22,7 +23,8 @@ Before choosing a Chat Bot API remember:
 * GPT is not free to use, it requires some [credits](https://openai.com/api/pricing/) that you need to purchase;
 * Gemini is free to use in [certain countries](https://ai.google.dev/gemini-api/docs/available-regions?hl=it);
 * LLAMA is free on https://groq.com/ everywhere and has some premium features (LLAMA hasn't any official API);
-* Doubao supports only Chinese.
+* Doubao supports only Chinese;
+* DeepSeek is not free to use, check [pricing](https://api-docs.deepseek.com/quick_start/pricing).
 
 
 ## Example of use
