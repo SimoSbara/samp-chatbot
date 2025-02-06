@@ -4,6 +4,7 @@
 #define GEMINI_AI	1
 #define LLAMA		2
 #define DOUBAO		3
+#define DEEPSEEK	4
 
 #define W1252		0
 #define GB2312		1

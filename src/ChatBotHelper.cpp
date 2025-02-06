@@ -25,6 +25,7 @@ curl_slist* ChatBotHelper::GetHeader(const ChatBotParams& params)
 
 	switch (params.botType)
 	{
+	case DEEPSEEK:
 	case DOUBAO:
 	case GPT:
 	case LLAMA:
@@ -50,7 +51,9 @@ std::string ChatBotHelper::GetURL(const ChatBotParams& params)
 	case LLAMA:
 		return "https://api.groq.com/openai/v1/chat/completions";
 	case DOUBAO:
-		return "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+		return "https://ark.cn-beijing.volces.com/api/v3/chat/completions";	
+	case DEEPSEEK:
+		return "https://api.deepseek.com/chat/completions";
 	}
 
 	return "";
@@ -63,6 +66,7 @@ json ChatBotHelper::CreateRequestDocument(const std::string request, const ChatB
 
 	switch (params.botType)
 	{
+	case DEEPSEEK:
 	case DOUBAO:
 	case LLAMA:
 	case GPT:
@@ -189,6 +193,7 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 
 			switch (params.botType)
 			{
+			case DEEPSEEK:
 			case DOUBAO:
 			case LLAMA:
 			case GPT:

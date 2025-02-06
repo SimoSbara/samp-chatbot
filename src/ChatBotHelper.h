@@ -13,6 +13,7 @@ enum ChatBots
 	GEMINI,
 	LLAMA,
 	DOUBAO,
+	DEEPSEEK,
 	NUM_CHAT_BOTS
 };
 
