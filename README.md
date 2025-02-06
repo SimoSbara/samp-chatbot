@@ -22,7 +22,7 @@ Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn im
 Before choosing a Chat Bot API remember:
 * GPT is not free to use, check [pricing](https://openai.com/api/pricing/);
 * Gemini is free to use in [certain countries](https://ai.google.dev/gemini-api/docs/available-regions?hl=it);
-* LLAMA is free on https://groq.com/ everywhere and has some premium features (LLAMA hasn't any official API);
+* LLAMA is free on [groq.com](https://groq.com/) everywhere and has some premium features (LLAMA hasn't any official API);
 * Doubao supports only Chinese;
 * DeepSeek is not free to use, check [pricing](https://api-docs.deepseek.com/quick_start/pricing).
 
