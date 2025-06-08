@@ -17,7 +17,8 @@
 
 enum Encodings
 {
-	W1252 = 0, //windows 1252 for latin
+	UTF8 = 0, //in case the source code uses UTF8, it won't be converted
+	W1252, //windows 1252 for latin
 	GB2312, //GB2312 for simplified chinese
 	W1251, //windows 1251 for cyrilic
 	NUM_ENCODINGS
@@ -31,6 +32,9 @@ public:
 	//maledette lingue diverse!!! (da encoding scelto a utf8)
 	static std::string ConvertToUTF8(std::string input, uint8_t inputEncoding)
 	{
+		if(inputEncoding == UTF8)
+			return input;
+
 #ifdef _WIN32
 		int inputCodePage;
 
@@ -142,6 +146,9 @@ public:
 	//gli accenti sono micidiali!!!! (da utf8 a l'encoding scelto)
 	static std::string ConvertToWideByte(std::string input, uint8_t outputEncoding)
 	{
+		if(outputEncoding == UTF8)
+			return input;
+
 #ifdef _WIN32
 		int outputCodePage;
 

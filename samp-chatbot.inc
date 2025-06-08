@@ -1,4 +1,4 @@
-﻿// Defines
+// Defines
 
 #define CHAT_GPT	0
 #define GEMINI_AI	1
@@ -6,9 +6,10 @@
 #define DOUBAO		3
 #define DEEPSEEK	4
 
-#define W1252		0
-#define GB2312		1
-#define W1251		2
+#define UTF8		0
+#define W1252	    1
+#define GB2312		2
+#define W1251		3
 
 // Natives
 

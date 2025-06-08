@@ -135,7 +135,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotEncoding(AMX* amx, cell* params)
 
 	int newEncoding = static_cast<int>(params[1]);
 
-	if (newEncoding >= W1252 && newEncoding < NUM_ENCODINGS)
+	if (newEncoding >= 0 && newEncoding < NUM_ENCODINGS)
 	{
 		paramsLock.lock();
 		botParams.encoding = newEncoding;
