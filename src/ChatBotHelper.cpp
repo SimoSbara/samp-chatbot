@@ -150,12 +150,22 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 
 		if (res == CURLE_OK)
 		{
-			nlohmann::json jresponse = nlohmann::json::parse(curlResponse);
-			response = GetBotAnswer(params, jresponse);
+			try
+			{
+				nlohmann::json jresponse = nlohmann::json::parse(curlResponse);
+				response = GetBotAnswer(params, jresponse);
 
-			//aggiungo nella memoria
-			memory.AddUserMessage(request);
-			memory.AddBotMessage(response);
+				//aggiungo nella memoria
+				memory.AddUserMessage(request);
+				memory.AddBotMessage(response);
+			}
+			catch(const std::exception& exc)
+			{
+				curl_easy_cleanup(curl);
+				curl_slist_free_all(headers);
+				logprintf("\n\nChat Bot Request Failed! Error: %s\n", exc.what());
+				return false;
+			}
 		}
 		else
 			logprintf("\n\nChat Bot Request Failed! Error: %s\n", curl_easy_strerror(res));
