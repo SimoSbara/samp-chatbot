@@ -272,6 +272,14 @@ static cell AMX_NATIVE_CALL n_SetModel(AMX* amx, cell* params)
 	return 0;
 }
 
+static cell AMX_NATIVE_CALL n_GetChatBotType(AMX* amx, cell* params)
+{
+	paramsLock.lock();
+	int type = botParams.botType;
+	paramsLock.unlock();
+	return type;
+}
+
 AMX_NATIVE_INFO natives[] =
 {
 	{ "SetChatBotEncoding", n_SetChatBotEncoding },
@@ -281,6 +289,7 @@ AMX_NATIVE_INFO natives[] =
 	{ "SetAPIKey", n_SetAPIKey },
 	{ "SetSystemPrompt", n_SetSystemPrompt },
 	{ "SetModel", n_SetModel },
+	{ "GetChatBotType", n_GetChatBotType },
 	{ 0, 0 }
 };
 
