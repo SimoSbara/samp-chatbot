@@ -18,7 +18,7 @@ typedef void (*logprintf_t)(const char*, ...);
 		return 0; \
 	}
 
-static logprintf_t logprintf;
+extern logprintf_t logprintf;
 
 extern void* pAMXFunctions;
 static std::set<AMX*> interfaces;

@@ -163,12 +163,14 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 			{
 				curl_easy_cleanup(curl);
 				curl_slist_free_all(headers);
-				logprintf("\n\nChat Bot Request Failed! Error: %s\n", exc.what());
+
+				logprintf("[ChatBot Plugin]: Request Parsing Failed! Error: %s", exc.what());
+				
 				return false;
 			}
 		}
 		else
-			logprintf("\n\nChat Bot Request Failed! Error: %s\n", curl_easy_strerror(res));
+			logprintf("[ChatBot Plugin]: Failed! Error: %s\n", curl_easy_strerror(res));
 
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
@@ -189,17 +191,9 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 		{
 			std::string answer;
 
-			try
-			{
-				nlohmann::json error = response.at("error");
-
-				if (!error.empty())
-					return response.dump(4).c_str();
-			}
-			catch (...)
-			{
-				//errore non trovato
-			}
+			//controllo errori
+			if (response.contains("error"))
+				return response.dump(4).c_str();
 
 			switch (params.botType)
 			{
@@ -218,8 +212,8 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 		}
 		catch (std::exception &exc)
 		{
-			logprintf("ChatBot Plugin Exception GetBotAnswer(): %s\n", exc.what());
-			logprintf("Chatbot Plugin Exception Response:\n%s", response.dump(4).c_str());
+			logprintf("[ChatBot Plugin]: Exception GetBotAnswer(): %s\n", exc.what());
+			logprintf("[ChatBot Plugin]: Exception Response:\n%s", response.dump(4).c_str());
 
 			return response.dump(4).c_str();
 		}

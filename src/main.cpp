@@ -24,6 +24,9 @@ static std::mutex memoryLock;
 static std::thread requestsThread;
 static std::atomic<bool> running;
 
+
+logprintf_t logprintf;
+
 static void DoRequest(std::string prompt, int id)
 {
 	std::string answer;
@@ -109,9 +112,13 @@ PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 
 PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 {
+	Sleep(5000);
+
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
-	logprintf("\n\nChatBot API Plugin %s by SimoSbara loaded\n", PLUGIN_VERSION);
+	logprintf("ChatBot Plugin %s by SimoSbara loaded", PLUGIN_VERSION);
+
+	//Sleep(5000);
 
 	InitParams();
 
@@ -126,7 +133,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	running = false;
 
-	logprintf("\n\nChatBot API Plugin %s by SimoSbara unloaded\n", PLUGIN_VERSION);    
+	logprintf("ChatBot Plugin %s by SimoSbara unloaded", PLUGIN_VERSION);    
 }
 
 static cell AMX_NATIVE_CALL n_SetChatBotEncoding(AMX* amx, cell* params)
