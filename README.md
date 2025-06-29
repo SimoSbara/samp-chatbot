@@ -5,7 +5,7 @@
 
 A GTA SAMP plugin for Chat Bot communication.
 
-It works for both [SA-MP](https://www.sa-mp.mp/) and [open.mp](https://www.open.mp/).
+It works for both [SA-MP 0.3.7/0.3.DL](https://www.sa-mp.mp/) and [open.mp](https://www.open.mp/).
 
 The following Chat Bots API are implemented:
 * [Chat GPT](https://platform.openai.com/docs/quickstart)
