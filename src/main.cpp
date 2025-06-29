@@ -112,14 +112,10 @@ PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 
 PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 {
-	Sleep(5000);
-
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 	logprintf("ChatBot Plugin %s by SimoSbara loaded", PLUGIN_VERSION);
-
-	//Sleep(5000);
-
+	
 	InitParams();
 
 	running = true;

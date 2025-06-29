@@ -17,6 +17,7 @@ native SetChatBotEncoding(encoding);
 native ClearMemory(id);
 native RequestToChatBot(const prompt[], id);
 native SelectChatBot(type);
+native GetChatBotType();
 native SetAPIKey(const apiKey[]);
 native SetSystemPrompt(const systemPrompt[]);
 native SetModel(const model[]);
