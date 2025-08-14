@@ -55,6 +55,8 @@ main()
     SetModel("llama3-70b-8192");
     SetAPIKey(API_KEY);
     SetSystemPrompt("You are an assistant inside GTA SAMP");
+    SetChatBotTimeout(10000);
+    SetChatBotDebugMode(CHATBOT_DEBUG_ERRORS);
 }
 
 CMD:clearmemory(playerid, params[])
@@ -133,6 +135,12 @@ public OnChatBotResponse(prompt[], response[], id)
 
         SendClientMessageToAll(COLOR_MAGENTA, "Chat Bot Responded Globally! Check it with /lastglobalresponse.");
     }
+}
+
+public OnChatBotError(id, const error[])
+{
+    printf("[ChatBot ERROR] | ID: %d | Message: %s", id, error);
+    return 1;
 }
 ```
 ## Installation
