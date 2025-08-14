@@ -45,7 +45,7 @@ static void DoRequest(std::string prompt, int id)
 
     bool success = ChatBotHelper::DoRequest(answer, prompt, curParams, memory);
 
-    AIResponse response(id, prompt, answer);
+	AIResponse response(id, prompt, answer, !success);
 
     responseLock.lock();
     responses.push(response);
@@ -85,7 +85,7 @@ static void RequestsThread()
             ChatBotParams curParams = botParams;
             paramsLock.unlock();
 
-            if (curParams.debugMode >= 2)
+			if (curParams.logMode >= LOG_VERBOSE)
             {
                 std::string encPrompt = EncodingHelper::ConvertToWideByte(prompt, curParams.encoding);
                 logprintf("\nnew request: %s\n", encPrompt.c_str());
@@ -106,7 +106,7 @@ void InitParams()
 	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/), 3 - DOUBAO
 	botParams.encoding = W1252; //windows 1252
     botParams.timeoutMs = 15000;
-    botParams.debugMode = 1; // errors only
+    botParams.logMode = LOG_ERRORS; // errors only
 }
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
@@ -172,20 +172,22 @@ static cell AMX_NATIVE_CALL n_SetChatBotTimeout(AMX* amx, cell* params)
     return 0;
 }
 
-static cell AMX_NATIVE_CALL n_SetChatBotDebugMode(AMX* amx, cell* params)
+static cell AMX_NATIVE_CALL n_SetChatBotLogMode(AMX* amx, cell* params)
 {
-    CHECK_PARAMS(1, "SetChatBotDebugMode");
+	CHECK_PARAMS(1, "SetChatBotLogMode");
 
     int mode = static_cast<int>(params[1]);
 
-    if (mode < 0) mode = 0;
-    if (mode > 2) mode = 2;
+	if (mode >= 0 && mode < NUM_LOG_MODES)
+	{
+		paramsLock.lock();
+		botParams.logMode = mode;
+		paramsLock.unlock();
 
-    paramsLock.lock();
-    botParams.debugMode = mode;
-    paramsLock.unlock();
+		return 1;
+	}
 
-    return 1;
+	return 0;
 }
 
 static cell AMX_NATIVE_CALL n_ClearMemory(AMX* amx, cell* params)
@@ -325,7 +327,7 @@ AMX_NATIVE_INFO natives[] =
 {
 	{ "SetChatBotEncoding", n_SetChatBotEncoding },
     { "SetChatBotTimeout", n_SetChatBotTimeout },
-    { "SetChatBotDebugMode", n_SetChatBotDebugMode },
+    { "SetChatBotLogMode", n_SetChatBotLogMode },
 	{ "ClearMemory", n_ClearMemory },
 	{ "RequestToChatBot", n_RequestToChatBot },
 	{ "SelectChatBot", n_SelectChatBot },
@@ -359,26 +361,19 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 
 		paramsLock.lock();
         int encoding = botParams.encoding;
-        int debugMode = botParams.debugMode;
+		int logMode = botParams.logMode;
 		paramsLock.unlock();
 
 		//conversione a encoding originale
 		std::string resp = EncodingHelper::ConvertToWideByte(response.GetResponse(), encoding);
 		std::string prompt = EncodingHelper::ConvertToWideByte(response.GetPrompt(), encoding);
 
-        if (debugMode >= 2)
+		if (logMode >= LOG_VERBOSE)
             logprintf("\nnew response: %s\n", resp.c_str());
-
-		bool isError = false;
-		{
-			const std::string &rawResp = response.GetResponse();
-			if (rawResp.size() >= 7 && rawResp.compare(0, 7, "[ERROR]") == 0)
-				isError = true;
-		}
 
 		for (std::set<AMX*>::iterator a = interfaces.begin(); a != interfaces.end(); a++)
 		{
-			if (isError)
+			if (response.IsInError())
 			{
 				int amxIndex = 0;
 				if (!amx_FindPublic(*a, "OnChatBotError", &amxIndex))

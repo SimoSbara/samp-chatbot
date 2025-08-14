@@ -17,6 +17,14 @@ enum ChatBots
 	NUM_CHAT_BOTS
 };
 
+enum LogModes
+{
+	LOG_SILENT = 0,
+	LOG_ERRORS,
+	LOG_VERBOSE,
+	NUM_LOG_MODES
+};
+
 class AIRequest
 {
 public:
@@ -55,11 +63,12 @@ private:
 class AIResponse
 {
 public:
-	AIResponse(int id, std::string prompt, std::string response)
+	AIResponse(int id, std::string prompt, std::string response, bool isError = false)
 	{
 		this->id = id;
 		this->prompt = prompt;
 		this->response = response;
+		this->error = isError;
 	}
 
 	std::string GetPrompt()
@@ -77,10 +86,16 @@ public:
 		return this->id;
 	}
 
+	bool IsInError() const
+	{
+		return this->error;
+	}
+
 private:
 	std::string prompt; //prompt from the player
 	std::string response; //response of gpt
 	int id; //ID of the original request
+	bool error;
 };
 
 struct Message
@@ -143,7 +158,7 @@ struct ChatBotParams
 	int botType; //enum ChatBots
 	int encoding; //enum Encodings
 	int timeoutMs;
-	int debugMode; // 0: silent, 1: errors. 2: verbose
+	int logMode; //enum LogModes
 };
 
 class ChatBotHelper

@@ -170,7 +170,7 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 				curl_easy_cleanup(curl);
 				curl_slist_free_all(headers);
 
-                if (params.debugMode >= 1)
+				if (params.logMode >= LOG_ERRORS)
 					logprintf("[ChatBot Plugin]: Request Parsing Failed! Error: %s", exc.what());
                 response = std::string("[ERROR] Request parsing failed: ") + exc.what();
 				
@@ -179,7 +179,7 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 		}
 		else
         {
-            if (params.debugMode >= 1)
+			if (params.logMode >= LOG_ERRORS)
                 logprintf("[ChatBot Plugin]: Failed! Error: %s\n", curl_easy_strerror(res));
             response = std::string("[ERROR] ") + curl_easy_strerror(res);
         }
