@@ -142,6 +142,8 @@ struct ChatBotParams
 	std::string model;
 	int botType; //enum ChatBots
 	int encoding; //enum Encodings
+	int timeoutMs;
+	int debugMode; // 0: silent, 1: errors. 2: verbose
 };
 
 class ChatBotHelper

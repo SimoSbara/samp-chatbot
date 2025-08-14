@@ -43,19 +43,20 @@ static void DoRequest(std::string prompt, int id)
 		memory = chatMemories[id];
 	memoryLock.unlock();
 
-	if (ChatBotHelper::DoRequest(answer, prompt, curParams, memory))
-	{
-		AIResponse response(id, prompt, answer);
+    bool success = ChatBotHelper::DoRequest(answer, prompt, curParams, memory);
 
-		responseLock.lock();
-		responses.push(response);
-		responseLock.unlock();
+    AIResponse response(id, prompt, answer);
 
-		//aggiorno la memoria
-		memoryLock.lock();
-		chatMemories[id] = memory;
-		memoryLock.unlock();
-	}
+    responseLock.lock();
+    responses.push(response);
+    responseLock.unlock();
+
+    if (success)
+    {
+        memoryLock.lock();
+        chatMemories[id] = memory;
+        memoryLock.unlock();
+    }
 }
 
 static void RequestsThread()
@@ -80,14 +81,15 @@ static void RequestsThread()
 
 		if (!prompt.empty())
 		{
-#ifdef _DEBUG
-			paramsLock.lock();
-			ChatBotParams curParams = botParams;
-			paramsLock.unlock();
+            paramsLock.lock();
+            ChatBotParams curParams = botParams;
+            paramsLock.unlock();
 
-			std::string encPrompt = EncodingHelper::ConvertToWideByte(prompt, curParams.encoding);
-			logprintf("\nnew request: %s\n", encPrompt.c_str());
-#endif
+            if (curParams.debugMode >= 2)
+            {
+                std::string encPrompt = EncodingHelper::ConvertToWideByte(prompt, curParams.encoding);
+                logprintf("\nnew request: %s\n", encPrompt.c_str());
+            }
 			DoRequest(prompt, id);
 			curRequest.Clear();	
 		}
@@ -103,6 +105,8 @@ void InitParams()
 	botParams.model = "gpt-3.5-turbo"; //GPT!!! goooo
 	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/), 3 - DOUBAO
 	botParams.encoding = W1252; //windows 1252
+    botParams.timeoutMs = 15000;
+    botParams.debugMode = 1; // errors only
 }
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
@@ -148,6 +152,40 @@ static cell AMX_NATIVE_CALL n_SetChatBotEncoding(AMX* amx, cell* params)
 	}
 
 	return 0;
+}
+
+static cell AMX_NATIVE_CALL n_SetChatBotTimeout(AMX* amx, cell* params)
+{
+    CHECK_PARAMS(1, "SetChatBotTimeout");
+
+    int timeoutMs = static_cast<int>(params[1]);
+
+    if (timeoutMs >= 0)
+    {
+        paramsLock.lock();
+        botParams.timeoutMs = timeoutMs;
+        paramsLock.unlock();
+
+        return 1;
+    }
+
+    return 0;
+}
+
+static cell AMX_NATIVE_CALL n_SetChatBotDebugMode(AMX* amx, cell* params)
+{
+    CHECK_PARAMS(1, "SetChatBotDebugMode");
+
+    int mode = static_cast<int>(params[1]);
+
+    if (mode < 0) mode = 0;
+    if (mode > 2) mode = 2;
+
+    paramsLock.lock();
+    botParams.debugMode = mode;
+    paramsLock.unlock();
+
+    return 1;
 }
 
 static cell AMX_NATIVE_CALL n_ClearMemory(AMX* amx, cell* params)
@@ -286,6 +324,8 @@ static cell AMX_NATIVE_CALL n_GetChatBotType(AMX* amx, cell* params)
 AMX_NATIVE_INFO natives[] =
 {
 	{ "SetChatBotEncoding", n_SetChatBotEncoding },
+    { "SetChatBotTimeout", n_SetChatBotTimeout },
+    { "SetChatBotDebugMode", n_SetChatBotDebugMode },
 	{ "ClearMemory", n_ClearMemory },
 	{ "RequestToChatBot", n_RequestToChatBot },
 	{ "SelectChatBot", n_SelectChatBot },
@@ -318,19 +358,40 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 		responseLock.unlock();
 
 		paramsLock.lock();
-		int encoding = botParams.encoding;
+        int encoding = botParams.encoding;
+        int debugMode = botParams.debugMode;
 		paramsLock.unlock();
 
 		//conversione a encoding originale
 		std::string resp = EncodingHelper::ConvertToWideByte(response.GetResponse(), encoding);
 		std::string prompt = EncodingHelper::ConvertToWideByte(response.GetPrompt(), encoding);
 
-#ifdef _DEBUG
-		logprintf("\nnew response: %s\n", resp.c_str());
-#endif
+        if (debugMode >= 2)
+            logprintf("\nnew response: %s\n", resp.c_str());
+
+		bool isError = false;
+		{
+			const std::string &rawResp = response.GetResponse();
+			if (rawResp.size() >= 7 && rawResp.compare(0, 7, "[ERROR]") == 0)
+				isError = true;
+		}
 
 		for (std::set<AMX*>::iterator a = interfaces.begin(); a != interfaces.end(); a++)
 		{
+			if (isError)
+			{
+				int amxIndex = 0;
+				if (!amx_FindPublic(*a, "OnChatBotError", &amxIndex))
+				{
+					cell amxAddress = 0;
+					amx_PushString(*a, &amxAddress, NULL, resp.c_str(), 0, 0);
+					amx_Push(*a, response.GetID());
+					amx_Exec(*a, NULL, amxIndex);
+					amx_Release(*a, amxAddress);
+					continue;
+				}
+			}
+
 			cell amxAddresses[2] = { 0 };
 			int amxIndex = 0;
 
