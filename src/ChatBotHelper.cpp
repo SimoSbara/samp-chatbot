@@ -146,6 +146,12 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlResponse);
 
+		if (params.timeoutMs > 0)
+		{
+			curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, params.timeoutMs);
+			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, params.timeoutMs);
+		}
+
 		CURLcode res = curl_easy_perform(curl);
 
 		if (res == CURLE_OK)
@@ -164,13 +170,19 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 				curl_easy_cleanup(curl);
 				curl_slist_free_all(headers);
 
-				logprintf("[ChatBot Plugin]: Request Parsing Failed! Error: %s", exc.what());
+				if (params.logMode >= LOG_ERRORS)
+					logprintf("[ChatBot Plugin]: Request Parsing Failed! Error: %s", exc.what());
+                response = std::string("[ERROR] Request parsing failed: ") + exc.what();
 				
 				return false;
 			}
 		}
 		else
-			logprintf("[ChatBot Plugin]: Failed! Error: %s\n", curl_easy_strerror(res));
+        {
+			if (params.logMode >= LOG_ERRORS)
+                logprintf("[ChatBot Plugin]: Failed! Error: %s\n", curl_easy_strerror(res));
+            response = std::string("[ERROR] ") + curl_easy_strerror(res);
+        }
 
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
@@ -178,7 +190,9 @@ bool ChatBotHelper::DoRequest(std::string& response, const std::string request, 
 		return res == CURLE_OK;
 	}
 
-	curl_easy_cleanup(curl);
+    curl_easy_cleanup(curl);
+
+    response = "[ERROR] curl init failed";
 
 	return false;
 }
@@ -193,7 +207,24 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 
 			//controllo errori
 			if (response.contains("error"))
-				return response.dump(4).c_str();
+            {
+                try
+                {
+                    std::string errMsg;
+                    if (response["error"].is_string())
+                        errMsg = response.at("error");
+                    else if (response["error"].is_object() && response["error"].contains("message"))
+                        errMsg = response.at("error").at("message");
+                    else
+                        errMsg = response.dump(0);
+
+                    return std::string("[ERROR] ") + errMsg;
+                }
+                catch (...)
+                {
+                    return std::string("[ERROR] ") + response.dump(0);
+                }
+            }
 
 			switch (params.botType)
 			{
@@ -212,10 +243,7 @@ std::string ChatBotHelper::GetBotAnswer(const ChatBotParams& params, nlohmann::j
 		}
 		catch (std::exception &exc)
 		{
-			logprintf("[ChatBot Plugin]: Exception GetBotAnswer(): %s\n", exc.what());
-			logprintf("[ChatBot Plugin]: Exception Response:\n%s", response.dump(4).c_str());
-
-			return response.dump(4).c_str();
+            return std::string("[ERROR] Exception parsing response: ") + exc.what();
 		}
 	}
 

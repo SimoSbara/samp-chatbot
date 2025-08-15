@@ -43,19 +43,20 @@ static void DoRequest(std::string prompt, int id)
 		memory = chatMemories[id];
 	memoryLock.unlock();
 
-	if (ChatBotHelper::DoRequest(answer, prompt, curParams, memory))
-	{
-		AIResponse response(id, prompt, answer);
+    bool success = ChatBotHelper::DoRequest(answer, prompt, curParams, memory);
 
-		responseLock.lock();
-		responses.push(response);
-		responseLock.unlock();
+	AIResponse response(id, prompt, answer, !success);
 
-		//aggiorno la memoria
-		memoryLock.lock();
-		chatMemories[id] = memory;
-		memoryLock.unlock();
-	}
+    responseLock.lock();
+    responses.push(response);
+    responseLock.unlock();
+
+    if (success)
+    {
+        memoryLock.lock();
+        chatMemories[id] = memory;
+        memoryLock.unlock();
+    }
 }
 
 static void RequestsThread()
@@ -80,14 +81,15 @@ static void RequestsThread()
 
 		if (!prompt.empty())
 		{
-#ifdef _DEBUG
-			paramsLock.lock();
-			ChatBotParams curParams = botParams;
-			paramsLock.unlock();
+            paramsLock.lock();
+            ChatBotParams curParams = botParams;
+            paramsLock.unlock();
 
-			std::string encPrompt = EncodingHelper::ConvertToWideByte(prompt, curParams.encoding);
-			logprintf("\nnew request: %s\n", encPrompt.c_str());
-#endif
+			if (curParams.logMode >= LOG_VERBOSE)
+            {
+                std::string encPrompt = EncodingHelper::ConvertToWideByte(prompt, curParams.encoding);
+                logprintf("\nnew request: %s\n", encPrompt.c_str());
+            }
 			DoRequest(prompt, id);
 			curRequest.Clear();	
 		}
@@ -103,6 +105,8 @@ void InitParams()
 	botParams.model = "gpt-3.5-turbo"; //GPT!!! goooo
 	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/), 3 - DOUBAO
 	botParams.encoding = W1252; //windows 1252
+    botParams.timeoutMs = 15000;
+    botParams.logMode = LOG_ERRORS; // errors only
 }
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
@@ -142,6 +146,42 @@ static cell AMX_NATIVE_CALL n_SetChatBotEncoding(AMX* amx, cell* params)
 	{
 		paramsLock.lock();
 		botParams.encoding = newEncoding;
+		paramsLock.unlock();
+
+		return 1;
+	}
+
+	return 0;
+}
+
+static cell AMX_NATIVE_CALL n_SetChatBotTimeout(AMX* amx, cell* params)
+{
+    CHECK_PARAMS(1, "SetChatBotTimeout");
+
+    int timeoutMs = static_cast<int>(params[1]);
+
+    if (timeoutMs >= 0)
+    {
+        paramsLock.lock();
+        botParams.timeoutMs = timeoutMs;
+        paramsLock.unlock();
+
+        return 1;
+    }
+
+    return 0;
+}
+
+static cell AMX_NATIVE_CALL n_SetChatBotLogMode(AMX* amx, cell* params)
+{
+	CHECK_PARAMS(1, "SetChatBotLogMode");
+
+    int mode = static_cast<int>(params[1]);
+
+	if (mode >= 0 && mode < NUM_LOG_MODES)
+	{
+		paramsLock.lock();
+		botParams.logMode = mode;
 		paramsLock.unlock();
 
 		return 1;
@@ -286,6 +326,8 @@ static cell AMX_NATIVE_CALL n_GetChatBotType(AMX* amx, cell* params)
 AMX_NATIVE_INFO natives[] =
 {
 	{ "SetChatBotEncoding", n_SetChatBotEncoding },
+    { "SetChatBotTimeout", n_SetChatBotTimeout },
+    { "SetChatBotLogMode", n_SetChatBotLogMode },
 	{ "ClearMemory", n_ClearMemory },
 	{ "RequestToChatBot", n_RequestToChatBot },
 	{ "SelectChatBot", n_SelectChatBot },
@@ -318,19 +360,33 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 		responseLock.unlock();
 
 		paramsLock.lock();
-		int encoding = botParams.encoding;
+        int encoding = botParams.encoding;
+		int logMode = botParams.logMode;
 		paramsLock.unlock();
 
 		//conversione a encoding originale
 		std::string resp = EncodingHelper::ConvertToWideByte(response.GetResponse(), encoding);
 		std::string prompt = EncodingHelper::ConvertToWideByte(response.GetPrompt(), encoding);
 
-#ifdef _DEBUG
-		logprintf("\nnew response: %s\n", resp.c_str());
-#endif
+		if (logMode >= LOG_VERBOSE)
+            logprintf("\nnew response: %s\n", resp.c_str());
 
 		for (std::set<AMX*>::iterator a = interfaces.begin(); a != interfaces.end(); a++)
 		{
+			if (response.IsInError())
+			{
+				int amxIndex = 0;
+				if (!amx_FindPublic(*a, "OnChatBotError", &amxIndex))
+				{
+					cell amxAddress = 0;
+					amx_PushString(*a, &amxAddress, NULL, resp.c_str(), 0, 0);
+					amx_Push(*a, response.GetID());
+					amx_Exec(*a, NULL, amxIndex);
+					amx_Release(*a, amxAddress);
+					continue;
+				}
+			}
+
 			cell amxAddresses[2] = { 0 };
 			int amxIndex = 0;
 

@@ -11,9 +11,18 @@
 #define GB2312		2
 #define W1251		3
 
+enum CHATBOT_LOG_MODE
+{
+    CHATBOT_LOG_SILENT,
+    CHATBOT_LOG_ERRORS,
+    CHATBOT_LOG_VERBOSE
+};
+
 // Natives
 
 native SetChatBotEncoding(encoding);
+native SetChatBotTimeout(ms);
+native SetChatBotLogMode(CHATBOT_LOG_MODE:mode);
 native ClearMemory(id);
 native RequestToChatBot(const prompt[], id);
 native SelectChatBot(type);
@@ -25,3 +34,4 @@ native SetModel(const model[]);
 // Callbacks
 
 forward OnChatBotResponse(prompt[], response[], id);
+forward OnChatBotError(id, const error[]);
