@@ -114,6 +114,12 @@ CMD:botglobal(playerid, params[])
     return 1;
 }
 
+CMD:lastglobalresponse(playerid)
+{
+	ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastGlobalResponse, "Ok", "");
+    return 1;
+}
+
 CMD:lastresponse(playerid, params[])
 {
     ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastResponses[playerid], "Ok", "");
