@@ -71,7 +71,7 @@ CMD:clearmemory(playerid, params[])
     return 1;
 }
 
-CMD:disablesysprompt(playerid, params[])
+CMD:disablesysprompt(playerid)
 {
     SetSystemPrompt("");
 
@@ -120,7 +120,7 @@ CMD:lastglobalresponse(playerid)
     return 1;
 }
 
-CMD:lastresponse(playerid, params[])
+CMD:lastresponse(playerid)
 {
     ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastResponses[playerid], "Ok", "");
     return 1;
