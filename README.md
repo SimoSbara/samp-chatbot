@@ -28,7 +28,7 @@ Before choosing a Chat Bot API remember:
 
 
 ## Example of use
-```
+```c++
 #include <a_samp>
 #include <core>
 #include <float>
