@@ -28,7 +28,7 @@ Before choosing a Chat Bot API remember:
 
 
 ## Example of use
-```
+```c++
 #include <a_samp>
 #include <core>
 #include <float>
@@ -71,7 +71,7 @@ CMD:clearmemory(playerid, params[])
     return 1;
 }
 
-CMD:disablesysprompt(playerid, params[])
+CMD:disablesysprompt(playerid)
 {
     SetSystemPrompt("");
 
@@ -114,7 +114,13 @@ CMD:botglobal(playerid, params[])
     return 1;
 }
 
-CMD:lastresponse(playerid, params[])
+CMD:lastglobalresponse(playerid)
+{
+	ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastGlobalResponse, "Ok", "");
+    return 1;
+}
+
+CMD:lastresponse(playerid)
 {
     ShowPlayerDialog(playerid, CHATBOT_DIALOG, DIALOG_STYLE_MSGBOX, "Chat Bot Answer", lastResponses[playerid], "Ok", "");
     return 1;
