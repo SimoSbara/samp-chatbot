@@ -52,9 +52,9 @@ main()
 {
     SetChatBotEncoding(W1252);
     SelectChatBot(LLAMA);
-    SetModel("llama3-70b-8192");
+    SetModel("llama-3.1-8b-instant");
     SetAPIKey(API_KEY);
-    SetSystemPrompt("You are an assistant inside GTA SAMP");
+    SetSystemPrompt("You are an assistant inside GTA San Andreas Multiplayer");
     SetChatBotTimeout(10000);
     SetChatBotLogMode(CHATBOT_DEBUG_ERRORS);
 }
