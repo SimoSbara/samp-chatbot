@@ -26,6 +26,8 @@ Before choosing a Chat Bot API remember:
 * Doubao performs better in Chinese;
 * DeepSeek is not free to use, check [pricing](https://api-docs.deepseek.com/quick_start/pricing).
 
+## Troubleshooting
+If you encounter any crash, make sure you updated [VC++ Runtimes](https://www.techpowerup.com/download/visual-c-redistributable-runtime-package-all-in-one/).
 
 ## Example of use
 ```c++
