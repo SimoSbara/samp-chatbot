@@ -56,7 +56,7 @@ main()
     SetAPIKey(API_KEY);
     SetSystemPrompt("You are an assistant inside GTA SAMP");
     SetChatBotTimeout(10000);
-    SetChatBotDebugMode(CHATBOT_DEBUG_ERRORS);
+    SetChatBotLogMode(CHATBOT_DEBUG_ERRORS);
 }
 
 CMD:clearmemory(playerid, params[])
