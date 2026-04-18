@@ -7,22 +7,25 @@
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\ChatBotHelper.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\sdk\src\plugin.h">
       <Filter>lib\sdk\src</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="src\ChatBotHelper.h">
+    <ClInclude Include="src\ChatBotHelper.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\EncodingHelper.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\SampHelper.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ChatBot.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Global.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
