@@ -1,34 +1,31 @@
 ﻿// Defines
 
-#define CHAT_GPT	0
-#define GEMINI_AI	1
-#define LLAMA		2
-#define DOUBAO		3
-#define DEEPSEEK	4
+#define CHATBOT_UTF8			0
+#define CHATBOT_W1252			1
+#define CHATBOT_GB2312			2
+#define CHATBOT_W1251			3
 
-#define UTF8		0
-#define W1252	    1
-#define GB2312		2
-#define W1251		3
-
-#define CHATBOT_LOG_SILENT  0
-#define CHATBOT_LOG_ERRORS  1
-#define CHATBOT_LOG_VERBOSE 2
+#define CHATBOT_LOG_SILENT		0
+#define CHATBOT_LOG_ERRORS		1
+#define CHATBOT_LOG_VERBOSE		2
 
 // Natives
 
-native SetChatBotEncoding(encoding);
-native SetChatBotTimeout(ms);
-native SetChatBotLogMode(mode);
-native ClearMemory(id);
-native RequestToChatBot(const prompt[], id);
-native SelectChatBot(type);
-native GetChatBotType();
-native SetAPIKey(const apiKey[]);
-native SetSystemPrompt(const systemPrompt[]);
-native SetModel(const model[]);
+native SetChatBotGlobalEncoding(encoding);
+native SetChatBotGlobalTimeout(ms);
+native SetChatBotGlobalLogMode(mode);
+
+native CreateChatBotMemory(memoryid);
+native ClearChatBotMemory(memoryid);
+
+native RequestToChatBot(chatbotid, memoryid, const prompt[]);
+
+native SetChatBotSystemPrompt(const systemPrompt[]);
+native SetChatBotModel(const model[]);
+native SetChatBotEndPoint(const endpoint[]);
+native SetChatBotAPIKey(const apiKey[]);
 
 // Callbacks
 
-forward OnChatBotResponse(prompt[], response[], id);
-forward OnChatBotError(id, const error[]);
+forward OnChatBotResponse(prompt[], response[], requestid);
+forward OnChatBotError(requestid, const error[]);

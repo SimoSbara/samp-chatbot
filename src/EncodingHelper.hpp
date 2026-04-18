@@ -30,7 +30,7 @@ class EncodingHelper
 {
 public:
 	//maledette lingue diverse!!! (da encoding scelto a utf8)
-	static std::string ConvertToUTF8(std::string input, uint8_t inputEncoding)
+	static std::string ConvertToUTF8(std::string input, Encodings inputEncoding)
 	{
 		if(inputEncoding == UTF8)
 			return input;
@@ -144,7 +144,7 @@ public:
 	}
 
 	//gli accenti sono micidiali!!!! (da utf8 a l'encoding scelto)
-	static std::string ConvertToWideByte(std::string input, uint8_t outputEncoding)
+	static std::string ConvertToWideByte(std::string input, Encodings outputEncoding)
 	{
 		if(outputEncoding == UTF8)
 			return input;
