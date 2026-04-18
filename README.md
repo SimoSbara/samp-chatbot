@@ -1,4 +1,4 @@
-# samp-chatbot
+﻿# samp-chatbot
 
 
 ## Description
@@ -42,23 +42,53 @@ If you encounter any crash, make sure to update [VC++ Runtimes](https://www.tech
 #define COLOR_MAGENTA 0xFF00FFFF
 
 #define CHATBOT_DIALOG   10
-#define API_KEY          "MY_API_KEY"
-#define GLOBAL_REQUEST   -1
+
+//Groq
+#define GLOBAL_CHATBOT_ID       0
+#define GLOBAL_API_KEY          "GROQ_API_KEY"
+#define GLOBAL_ENDPOINT         "https://api.groq.com/openai/v1/chat/completions"
+#define GLOBAL_MODEL            "llama-3.1-8b-instant"
+#define GLOBAL_SYSTEMPROMPT     "You are inside a GTA SAMP Server"
+
+//Gemini
+#define PLAYER_CHATBOT_ID       1
+#define PLAYER_API_KEY          "GEMINI_API_KEY"
+#define PLAYER_ENDPOINT         "https://generativelanguage.googleapis.com/v1beta/interactions"
+#define PLAYER_MODEL            "gemini-3-flash-preview"
+#define PLAYER_SYSTEMPROMPT     "You are inside a GTA SAMP Server"
+
+//generic memory
+#define MEMORY_ID               0
 
 #pragma tabsize 0
 
 new lastResponses[MAX_PLAYERS][1024];
 new lastGlobalResponse[1024];
 
+new lastResponseID[MAX_PLAYERS];
+new lastGlobalRequestID = -1;
+
 main()
 {
-    SetChatBotEncoding(W1252);
-    SelectChatBot(LLAMA);
-    SetModel("llama-3.1-8b-instant");
-    SetAPIKey(API_KEY);
-    SetSystemPrompt("You are an assistant inside GTA San Andreas Multiplayer");
-    SetChatBotTimeout(10000);
-    SetChatBotLogMode(CHATBOT_DEBUG_ERRORS);
+    SetChatBotGlobalEncoding(CHATBOT_W1252);
+    SetChatBotGlobalTimeout(10000);
+    SetChatBotGlobalLogMode(CHATBOT_LOG_ERRORS);
+
+    CreateChatBotMemory(MEMORY_ID);
+
+    //chatbot 1
+    CreateChatBot(GLOBAL_CHATBOT_ID);
+    SetChatBotModel(GLOBAL_CHATBOT_ID, GLOBAL_MODEL);
+    SetChatBotEndPoint(GLOBAL_CHATBOT_ID, GLOBAL_ENDPOINT);
+    SetChatBotAPIKey(GLOBAL_CHATBOT_ID, GLOBAL_API_KEY);
+    SetChatBotSystemPrompt(GLOBAL_CHATBOT_ID, GLOBAL_SYSTEMPROMPT);
+    
+    //chatbot 2
+    CreateChatBot(PLAYER_CHATBOT_ID);
+    SetChatBotModel(PLAYER_CHATBOT_ID, PLAYER_MODEL);
+    SetChatBotEndPoint(PLAYER_CHATBOT_ID, PLAYER_ENDPOINT);
+    SetChatBotAPIKey(PLAYER_CHATBOT_ID, PLAYER_API_KEY);
+    SetChatBotSystemPrompt(PLAYER_CHATBOT_ID, PLAYER_SYSTEMPROMPT);
 }
 
 CMD:clearmemory(playerid, params[])
@@ -68,26 +98,7 @@ CMD:clearmemory(playerid, params[])
     if(sscanf(params, "d", id))
         return SendClientMessage(playerid, COLOR_RED, "/clearmemory <id>");
 
-    ClearMemory(id);
-
-    return 1;
-}
-
-CMD:disablesysprompt(playerid)
-{
-    SetSystemPrompt("");
-
-    return 1;
-}
-
-CMD:sysprompt(playerid, params[])
-{
-    new sysPrompt[512];
-
-    if(sscanf(params, "s[512]", sysPrompt))
-        return SendClientMessage(playerid, COLOR_RED, "/sysprompt <system_prompt>");
-
-    SetSystemPrompt(sysPrompt);
+    ClearChatBotMemory(id);
 
     return 1;
 }
@@ -95,11 +106,12 @@ CMD:sysprompt(playerid, params[])
 CMD:bot(playerid, params[])
 {
     new prompt[512];
+    new memoryid;
 
-    if(sscanf(params, "s[512]", prompt))
-        return SendClientMessage(playerid, COLOR_RED, "/bot <prompt>");
+    if(sscanf(params, "ds[512]", memoryid, prompt))
+        return SendClientMessage(playerid, COLOR_RED, "/bot <memory (-1 no memory)> <prompt>");
 
-    RequestToChatBot(prompt, playerid);
+    lastResponseID[playerid] = RequestToChatBot(PLAYER_CHATBOT_ID, memoryid, prompt);
 
     return 1;
 }
@@ -111,7 +123,8 @@ CMD:botglobal(playerid, params[])
     if(sscanf(params, "s[512]", prompt))
         return SendClientMessage(playerid, COLOR_RED, "/botglobal <prompt>");
 
-    RequestToChatBot(prompt, GLOBAL_REQUEST);
+    //no memory
+    lastGlobalRequestID = RequestToChatBot(GLOBAL_CHATBOT_ID, -1, prompt);
 
     return 1;
 }
@@ -128,26 +141,45 @@ CMD:lastresponse(playerid)
     return 1;
 }
 
-public OnChatBotResponse(prompt[], response[], id)
+public OnChatBotResponse(prompt[], response[], requestid)
 {
-    //from a player
-    if(id >= 0 && id < MAX_PLAYERS)
-    {
-        format(lastResponses[id], 1024, "%s", response);
+    printf("OnChatBotResponse() ID: %d | prompt: %s | response: %s", requestid, prompt, response);
 
-        SendClientMessage(id, COLOR_MAGENTA, "Chat Bot Responded! Check it with /lastresponse.");
-    }
-    else if(id == GLOBAL_REQUEST) //global
+    if(lastGlobalRequestID == requestid)
     {
         format(lastGlobalResponse, 2048, "%s", response);
-
         SendClientMessageToAll(COLOR_MAGENTA, "Chat Bot Responded Globally! Check it with /lastglobalresponse.");
+    }
+    else
+    {
+        new playerid = -1;
+
+        for(new i = 0; i < MAX_PLAYERS; i++)
+        {
+            if(lastResponseID[i] == requestid)
+            {
+                playerid = i;
+                break;
+            }
+        }
+
+        if(playerid != -1)
+        {
+            format(lastResponses[playerid], 2048, "%s", response);
+            SendClientMessage(playerid, COLOR_MAGENTA, "Chat Bot Responded! Check it with /lastresponse.");
+        }
+        else
+        {
+            new msg[512];
+            format(msg, sizeof(msg), "Unknown Request ID: %d", requestid);
+            SendClientMessageToAll(COLOR_MAGENTA, msg);
+        }
     }
 }
 
-public OnChatBotError(id, const error[])
+public OnChatBotError(requestid, const error[])
 {
-    printf("[ChatBot ERROR] | ID: %d | Message: %s", id, error);
+    printf("OnChatBotError() ID: %d | Message: %s", requestid, error);
     return 1;
 }
 ```

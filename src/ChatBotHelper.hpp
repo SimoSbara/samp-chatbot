@@ -169,6 +169,16 @@ public:
 
 			if (res == CURLE_OK)
 			{
+				long code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+
+				if (code != 200)
+				{
+					response = "Request Failed! Code: " + std::to_string(code);
+					WriteErrorLog(response);
+					return false;
+				}
+
 				try
 				{
 					nlohmann::json jresponse = nlohmann::json::parse(curlResponse);
@@ -183,18 +193,16 @@ public:
 					curl_easy_cleanup(curl);
 					curl_slist_free_all(headers);
 
-					if (globalParams.logMode >= LOG_ERRORS)
-						logprintf("[ChatBot Plugin]: Request Parsing Failed! Error: %s", exc.what());
-					response = std::string("[ERROR] Request parsing failed: ") + exc.what();
+					response = "Request Parsing Failed: " + std::string(exc.what());
+					WriteErrorLog(response);
 
 					return false;
 				}
 			}
 			else
 			{
-				if (globalParams.logMode >= LOG_ERRORS)
-					logprintf("[ChatBot Plugin]: Failed! Error: %s\n", curl_easy_strerror(res));
-				response = std::string("[ERROR] ") + curl_easy_strerror(res);
+				response = "cURL Failed: " + std::to_string(res);
+				WriteErrorLog(response);
 			}
 
 			curl_easy_cleanup(curl);
@@ -205,7 +213,8 @@ public:
 
 		curl_easy_cleanup(curl);
 
-		response = "[ERROR] curl init failed";
+		response = "cURL Init Failed!";
+		WriteErrorLog(response);
 
 		return false;
 	}
@@ -242,7 +251,9 @@ private:
 				}
 				catch (...)
 				{
-					return std::string("[ERROR] ") + response.dump(0);
+					std::string error = std::string("ParseBotAnswer() Unknown Exception: ") + " | " + response.dump(0);
+					WriteErrorLog(error);
+					return error;
 				}
 			}
 
@@ -250,7 +261,10 @@ private:
 		}
 		catch (std::exception& exc)
 		{
-			return std::string("[ERROR] Exception parsing response: ") + exc.what();
+			std::string error = std::string("ParseBotAnswer() Exception: ") + exc.what() + " | " + response.dump(0);
+			WriteErrorLog(error);
+
+			return error;
 		}
 
 		return "";

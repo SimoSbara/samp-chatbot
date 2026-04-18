@@ -68,6 +68,8 @@ static void ExecuteRequest(const AIRequest& request)
 
 	if (status != SUCCESS)
 	{
+		response.SetResponse("Invalid Memory ID");
+		response.SetStatusCode(status);
 		AppendResponse(response);
 		return;
 	}
@@ -75,23 +77,25 @@ static void ExecuteRequest(const AIRequest& request)
 	{
 		std::lock_guard<std::mutex> lk(chatBotLock);
 
-		if (chatBots.find(memoryID) != chatBots.end())
-			chatbot = chatBots[memoryID];
+		if (chatBots.find(chatbotID) != chatBots.end())
+			chatbot = chatBots[chatbotID];
 		else
 			status = INVALID_CHATBOT;
 	}
 
 	if (status != SUCCESS)
 	{
+		response.SetResponse("Invalid ChatBot ID");
+		response.SetStatusCode(status);
 		AppendResponse(response);
 		return;
 	}
 
 	if (!ChatBotHelper::DoRequest(answer, prompt, chatbot, memory))
 		status = FAILED_REQUEST;
-	else
-		response.SetResponse(answer);
 
+	response.SetStatusCode(status);
+	response.SetResponse(answer);
 	AppendResponse(response);
 
     if (memoryID != -1 && status == SUCCESS)
@@ -110,13 +114,16 @@ static void RequestsThread()
 		{
 			std::unique_lock<std::mutex> lk(requestLock);
 			cvRequest.wait(lk, [&] 
-				{ 
-					if (!running)
-						return true;
+			{ 
+				if (!running)
+					return true;
 
-					curRequestes.swap(requestes);
-					return true; 
-				});
+				if (requestes.empty())
+					return false;
+
+				curRequestes.swap(requestes);
+				return true; 
+			});
 		}
 
 		if (!running)
@@ -137,17 +144,6 @@ static void RequestsThread()
 			curRequestes.pop();
 		}
 	}
-}
-
-void InitParams()
-{
-	/*
-	botParams.model = "gpt-3.5-turbo"; //GPT!!! goooo
-	botParams.botType = GPT; //0 - GPT, 1 - Gemini, 2 - LLAMA (https://groq.com/), 3 - DOUBAO
-	botParams.encoding = W1252; //windows 1252
-    botParams.timeoutMs = 15000;
-    botParams.logMode = LOG_ERRORS; // errors only
-	*/
 }
 
 void Start()
@@ -285,7 +281,7 @@ static cell AMX_NATIVE_CALL n_ClearChatBotMemory(AMX* amx, cell* params)
 	{
 		std::lock_guard<std::mutex> lock(memoryLock);
 
-		if (chatMemories.find(id) != chatMemories.end())
+		if (chatMemories.find(id) == chatMemories.end())
 			return 0;
 
 		chatMemories[id].Clear();
@@ -316,14 +312,14 @@ static cell AMX_NATIVE_CALL n_SetChatBotSystemPrompt(AMX* amx, cell* params)
 {
 	char* pPrompt = NULL;
 
-	CHECK_PARAMS(1, "SetChatBotSystemPrompt"); //chatbotid int, system prompt string
+	CHECK_PARAMS(2, "SetChatBotSystemPrompt"); //chatbotid int, system prompt string
 	int id = static_cast<int>(params[1]);
 	amx_StrParam(amx, params[2], pPrompt);
 
 	{
 		std::lock_guard<std::mutex> lock(chatBotLock);
 
-		if (chatBots.find(id) != chatBots.end())
+		if (chatBots.find(id) == chatBots.end())
 			return 0;
 
 		std::string systemPrompt;
@@ -341,7 +337,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotModel(AMX* amx, cell* params)
 {
 	char* pModel = NULL;
 
-	CHECK_PARAMS(1, "SetChatBotModel"); //chatbotid int, model string
+	CHECK_PARAMS(2, "SetChatBotModel"); //chatbotid int, model string
 	int id = static_cast<int>(params[1]);
 	amx_StrParam(amx, params[2], pModel);
 
@@ -351,7 +347,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotModel(AMX* amx, cell* params)
 	{
 		std::lock_guard<std::mutex> lock(chatBotLock);
 
-		if (chatBots.find(id) != chatBots.end())
+		if (chatBots.find(id) == chatBots.end())
 			return 0;
 
 		chatBots[id].SetModel(pModel);
@@ -364,7 +360,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotEndPoint(AMX* amx, cell* params)
 {
 	char* pEndPoint = NULL;
 
-	CHECK_PARAMS(1, "SetChatBotEndPoint"); //chatbotid int, endpoint string
+	CHECK_PARAMS(2, "SetChatBotEndPoint"); //chatbotid int, endpoint string
 	int id = static_cast<int>(params[1]);
 	amx_StrParam(amx, params[2], pEndPoint);
 
@@ -374,7 +370,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotEndPoint(AMX* amx, cell* params)
 	{
 		std::lock_guard<std::mutex> lock(chatBotLock);
 
-		if (chatBots.find(id) != chatBots.end())
+		if (chatBots.find(id) == chatBots.end())
 			return 0;
 
 		chatBots[id].SetEndPoint(pEndPoint);
@@ -387,7 +383,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotAPIKey(AMX* amx, cell* params)
 {
 	char* pKey = NULL;
 
-	CHECK_PARAMS(1, "SetChatBotAPIKey"); //chatbotid int, api key string
+	CHECK_PARAMS(2, "SetChatBotAPIKey"); //chatbotid int, api key string
 	int id = static_cast<int>(params[1]);
 	amx_StrParam(amx, params[2], pKey);
 
@@ -397,7 +393,7 @@ static cell AMX_NATIVE_CALL n_SetChatBotAPIKey(AMX* amx, cell* params)
 	{
 		std::lock_guard<std::mutex> lock(chatBotLock);
 
-		if (chatBots.find(id) != chatBots.end())
+		if (chatBots.find(id) == chatBots.end())
 			return 0;
 
 		chatBots[id].SetAPIKey(pKey);
@@ -453,10 +449,6 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 
 		//conversione a encoding originale
 		std::string resp = EncodingHelper::ConvertToWideByte(response.GetResponse(), encoding);
-		std::string prompt = EncodingHelper::ConvertToWideByte(response.GetPrompt(), encoding);
-
-		if (logMode >= LOG_VERBOSE)
-            logprintf("\nnew response: %s\n", resp.c_str());
 
 		for (std::set<AMX*>::iterator a = interfaces.begin(); a != interfaces.end(); a++)
 		{
@@ -482,6 +474,8 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 
 				if (!amx_FindPublic(*a, "OnChatBotResponse", &amxIndex))
 				{
+					std::string prompt = EncodingHelper::ConvertToWideByte(response.GetPrompt(), encoding);
+
 					//parametri al contrario
 					amx_Push(*a, response.GetRequestID());
 					amx_PushString(*a, &amxAddresses[0], NULL, resp.c_str(), 0, 0);

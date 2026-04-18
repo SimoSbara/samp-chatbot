@@ -18,12 +18,14 @@ native SetChatBotGlobalLogMode(mode);
 native CreateChatBotMemory(memoryid);
 native ClearChatBotMemory(memoryid);
 
+native CreateChatBot(chatbotid);
+
 native RequestToChatBot(chatbotid, memoryid, const prompt[]);
 
-native SetChatBotSystemPrompt(const systemPrompt[]);
-native SetChatBotModel(const model[]);
-native SetChatBotEndPoint(const endpoint[]);
-native SetChatBotAPIKey(const apiKey[]);
+native SetChatBotSystemPrompt(chatbotid, const systemPrompt[]);
+native SetChatBotModel(chatbotid, const model[]);
+native SetChatBotEndPoint(chatbotid, const endpoint[]);
+native SetChatBotAPIKey(chatbotid, const apiKey[]);
 
 // Callbacks
 
