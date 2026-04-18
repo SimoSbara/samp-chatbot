@@ -7,19 +7,12 @@ A GTA SAMP plugin for Chat Bot communication.
 
 It works for both [SA-MP 0.3.7/0.3.DL](https://www.sa-mp.mp/) and [open.mp](https://www.open.mp/).
 
-The following Chat Bots API are implemented:
-* [Chat GPT](https://platform.openai.com/docs/quickstart)
-* [Gemini AI](https://ai.google.dev/)
-* [LLAMA](https://groq.com/)
-* [Doubao](https://www.doubao.com/)
-* [DeepSeek](https://www.deepseek.com/)
-
-This plugin can permit arbitrary model and system instruction choise using natives in runtime.
+**You can use any OpenAI compatible endpoint, even a local LLM server!**
 
 Refer to this [wiki](https://github.com/SimoSbara/samp-chatbot/wiki) for pawn implementation.
 
 ### Side Note
-Before choosing a Chat Bot API remember:
+Before choosing a Chat Bot Provider remember:
 * GPT is not free to use, check [pricing](https://openai.com/api/pricing/);
 * Gemini is free to use in [certain countries](https://ai.google.dev/gemini-api/docs/available-regions?hl=it);
 * LLAMA is free on [groq.com](https://groq.com/) everywhere and has some premium features (LLAMA hasn't any official API);
